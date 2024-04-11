@@ -1,35 +1,27 @@
 #include "player.h"
 
-#define PUBLIC
-#define PRIVATE static
-
-PRIVATE int width = 16;
-PRIVATE int height = 16;
-
-struct Player_type
-{
-    int PLayer_POSITIOn_Y;
-    int PLayer_POSITIOn_X;
-    int PLayer_frame;
-    int speed;
+// Define the structure
+struct Player_type {
+    int positionX;
+    int positionY;
 };
-PUBLIC Player createPlayer(int x, int y){   
-Player p = malloc(sizeof(struct Player_type));
 
-    p->PLayer_POSITIOn_Y = y;
-    p->PLayer_POSITIOn_X = x;
-    p->PLayer_frame = 0;
-    p->speed = 1;
+// Function to get player's X position
+int getplayerPositionX(Player p) {
+    return p->positionX;
+}
+
+// Function to get player's Y position
+int getplayerPositionY(Player p) {
+    return p->positionY;
+}
+
+// Function to create a new player
+Player createPlayer(int x, int y) {
+    Player p = malloc(sizeof(struct Player_type));
+    if (p != NULL) {
+        p->positionX = x;
+        p->positionY = y;
+    }
     return p;
-
-}
-
-
-PUBLIC int getPlayerHeight(){
-    return height;
-}
-
-
-PUBLIC int getPlayerWidth(){
-    return width;   
 }
