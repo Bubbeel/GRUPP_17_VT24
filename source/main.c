@@ -1,13 +1,21 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <math.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include "map.h"
 
 #define SPEED 100
-#define WINDOW_WIDTH 600
-#define WINDOW_HEIGHT 400
+#define WINDOW_WIDTH 1000
+#define WINDOW_HEIGHT 700
+
+#define FLAG_FRAME_RATE 10
+#define PLAYER_FRAME_RATE 60
+
+// Constants for close distance threshold and flag speed
+#define CLOSE_DISTANCE_THRESHOLD 200
+#define FLAG_SPEED 2
 
 //renderBackground initialization for GridMap
 void renderBackground(SDL_Renderer *pRenderer, SDL_Texture *mTile, SDL_Rect gTiles[]);
@@ -17,8 +25,10 @@ int main(int argc, char** argv) {
         printf("Error: %s\n", SDL_GetError());
         return 1;
     }
-    //initialization of the font?
-    //if(TTF_Init)
+
+
+    int flagX, flagY;
+
 
     SDL_Window* pWindow = SDL_CreateWindow("Enkelt exempel 1", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     if (!pWindow) {
@@ -41,8 +51,9 @@ int main(int argc, char** argv) {
 
     SDL_Surface* pSurface1 = IMG_Load("resources/player1.png");
     SDL_Surface* pSurface2 = IMG_Load("resources/player2.png");
+    SDL_Surface* pSurfaceFlag = IMG_Load("resources/spritesheet.png");
 
-    if (!pSurface1 || !pSurface2) {
+    if (!pSurface1 || !pSurface2 || !pSurfaceFlag) {
         printf("Error: %s\n", SDL_GetError());
         SDL_DestroyRenderer(pRenderer);
         SDL_DestroyWindow(pWindow);
@@ -52,10 +63,13 @@ int main(int argc, char** argv) {
 
     SDL_Texture* pTexture1 = SDL_CreateTextureFromSurface(pRenderer, pSurface1);
     SDL_Texture* pTexture2 = SDL_CreateTextureFromSurface(pRenderer, pSurface2);
+    SDL_Texture* pTextureFlag = SDL_CreateTextureFromSurface(pRenderer, pSurfaceFlag);
     SDL_FreeSurface(pSurface1);
     SDL_FreeSurface(pSurface2);
+    SDL_FreeSurface(pSurfaceFlag);
 
-    if (!pTexture1 || !pTexture2) {
+
+    if (!pTexture1 || !pTexture2 || !pTextureFlag) {
         printf("Error: %s\n", SDL_GetError());
         SDL_DestroyRenderer(pRenderer);
         SDL_DestroyWindow(pWindow);
@@ -65,30 +79,35 @@ int main(int argc, char** argv) {
 
     SDL_Rect playerRect1;
     SDL_Rect playerRect2;
+    SDL_Rect flagRect;
     SDL_QueryTexture(pTexture1, NULL, NULL, &playerRect1.w, &playerRect1.h);
     SDL_QueryTexture(pTexture2, NULL, NULL, &playerRect2.w, &playerRect2.h);
+    SDL_QueryTexture(pTextureFlag, NULL, NULL, &flagRect.w, &flagRect.h);
 
-    //storlek
+    // Size
     playerRect1.w /= 20;
     playerRect1.h /= 20;
     playerRect2.w /= 20;
     playerRect2.h /= 20;
+    flagRect.w /= 5;
 
-    // Startpositioner:
-
-    //övre vänster kant
+    // Start positions
     float player1X = playerRect1.w;
     float player1Y = playerRect1.h; 
 
-    //nedre höger kant
     float player2X = WINDOW_WIDTH - playerRect2.w; 
     float player2Y = WINDOW_HEIGHT - playerRect2.h;
+
+    flagRect.x = (WINDOW_WIDTH - flagRect.w) / 2;
+    flagRect.y = (WINDOW_HEIGHT - flagRect.h) / 2;
 
     float player1VelocityX = 0;
     float player1VelocityY = 0;
     float player2VelocityX = 0;
     float player2VelocityY = 0;
-    
+
+    int flagFrame = 0;
+
     bool closeWindow = false;
     bool up1, down1, left1, right1;
     bool up2, down2, left2, right2;
@@ -103,7 +122,6 @@ int main(int argc, char** argv) {
                     break;
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.scancode) {
-                        //player1 styrning
                         case SDL_SCANCODE_W:
                             up1 = true;
                             break;
@@ -116,7 +134,6 @@ int main(int argc, char** argv) {
                         case SDL_SCANCODE_D:
                             right1 = true;
                             break;
-                        // Spelare 2 styrning 
                         case SDL_SCANCODE_UP:
                             up2 = true;
                             break;
@@ -133,7 +150,6 @@ int main(int argc, char** argv) {
                     break;
                 case SDL_KEYUP:
                     switch (event.key.keysym.scancode) {
-                        // Spelare 1 styrning
                         case SDL_SCANCODE_W:
                             up1 = false;
                             break;
@@ -146,7 +162,6 @@ int main(int argc, char** argv) {
                         case SDL_SCANCODE_D:
                             right1 = false;
                             break;
-                        // Spelare 2 styrning
                         case SDL_SCANCODE_UP:
                             up2 = false;
                             break;
@@ -163,13 +178,56 @@ int main(int argc, char** argv) {
                     break;
             }
         }
-        // Spelare 1 rörelse
+
+        SDL_SetRenderDrawColor(pRenderer, 255, 255, 255, 255);
+        SDL_RenderClear(pRenderer);
+
+        SDL_Rect srcRect = { flagFrame * flagRect.w, 0, flagRect.w, flagRect.h };
+        SDL_RenderCopy(pRenderer, pTextureFlag, &srcRect, &flagRect);
+        SDL_RenderPresent(pRenderer);
+
+        flagFrame = (flagFrame + 1) % 5;
+
+        // Calculate distance between player 1 and flag
+        float distToPlayer1 = sqrt(pow(player1X - flagRect.x, 2) + pow(player1Y - flagRect.y, 2));
+
+        // Calculate distance between player 2 and flag
+        float distToPlayer2 = sqrt(pow(player2X - flagRect.x, 2) + pow(player2Y - flagRect.y, 2));
+
+        // Calculate distance between player 1 and player 2
+        float distBetweenPlayers = sqrt(pow(player1X - player2X, 2) + pow(player1Y - player2Y, 2));
+
+        // If player 1 is closer to the flag and within a certain distance threshold, move the flag towards player 1
+        if (distToPlayer1 < distToPlayer2 && distToPlayer1 < distBetweenPlayers && distToPlayer1 < CLOSE_DISTANCE_THRESHOLD) {
+            float dx = player1X - flagRect.x;
+            float dy = player1Y - flagRect.y;
+            float length = sqrt(dx * dx + dy * dy);
+            if (length != 0) {
+                dx /= length;
+                dy /= length;
+            }
+            flagRect.x += dx * FLAG_SPEED;
+            flagRect.y += dy * FLAG_SPEED;
+        }
+        // If player 2 is closer to the flag and within a certain distance threshold, move the flag towards player 2
+        else if (distToPlayer2 < distToPlayer1 && distToPlayer2 < distBetweenPlayers && distToPlayer2 < CLOSE_DISTANCE_THRESHOLD) {
+            float dx = player2X - flagRect.x;
+            float dy = player2Y - flagRect.y;
+            float length = sqrt(dx * dx + dy * dy);
+            if (length != 0) {
+                dx /= length;
+                dy /= length;
+            }
+            flagRect.x += dx * FLAG_SPEED;
+            flagRect.y += dy * FLAG_SPEED;
+        }
+
         player1VelocityX = player1VelocityY = 0;
         if (up1 && !down1) player1VelocityY = -SPEED;
         if (down1 && !up1) player1VelocityY = SPEED;
         if (left1 && !right1) player1VelocityX = -SPEED;
         if (right1 && !left1) player1VelocityX = SPEED;
-        player1X += player1VelocityX / 60; // 60 frames/s
+        player1X += player1VelocityX / 60; 
         player1Y += player1VelocityY / 60;
         if (player1X < 0) player1X = 0;
         if (player1Y < 0) player1Y = 0;
@@ -178,13 +236,12 @@ int main(int argc, char** argv) {
         playerRect1.x = player1X;
         playerRect1.y = player1Y;
 
-        // Spelare 2 rörelse
         player2VelocityX = player2VelocityY = 0;
         if (up2 && !down2) player2VelocityY = -SPEED;
         if (down2 && !up2) player2VelocityY = SPEED;
         if (left2 && !right2) player2VelocityX = -SPEED;
         if (right2 && !left2) player2VelocityX = SPEED;
-        player2X += player2VelocityX / 60; // 60 frames/s
+        player2X += player2VelocityX / 60;
         player2Y += player2VelocityY / 60;
         if (player2X < 0) player2X = 0;
         if (player2Y < 0) player2Y = 0;
@@ -200,11 +257,12 @@ int main(int argc, char** argv) {
         SDL_RenderCopy(pRenderer, pTexture1, NULL, &playerRect1);
         SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
         SDL_RenderPresent(pRenderer);
-        SDL_Delay(1000 / 60); // 60 frames/s
+        SDL_Delay(1000 / PLAYER_FRAME_RATE); 
     }
 
     SDL_DestroyTexture(pTexture1);
     SDL_DestroyTexture(pTexture2);
+    SDL_DestroyTexture(pTextureFlag);
     SDL_DestroyRenderer(pRenderer);
     SDL_DestroyWindow(pWindow);
 
