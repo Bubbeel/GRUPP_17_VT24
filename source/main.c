@@ -4,6 +4,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+#include "objects/player.h"
+#include "objects/flag.h"
 
 #define SPEED 100
 #define WINDOW_WIDTH 1000
@@ -12,7 +14,6 @@
 #define FLAG_FRAME_RATE 10
 #define PLAYER_FRAME_RATE 60
 
-// Constants for close distance threshold and flag speed
 #define CLOSE_DISTANCE_THRESHOLD 200
 #define FLAG_SPEED 2
 
@@ -22,9 +23,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-
     int flagX, flagY;
-
 
     SDL_Window* pWindow = SDL_CreateWindow("Enkelt exempel 1", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     if (!pWindow) {
@@ -60,7 +59,6 @@ int main(int argc, char** argv) {
     SDL_FreeSurface(pSurface2);
     SDL_FreeSurface(pSurfaceFlag);
 
-
     if (!pTexture1 || !pTexture2 || !pTextureFlag) {
         printf("Error: %s\n", SDL_GetError());
         SDL_DestroyRenderer(pRenderer);
@@ -76,14 +74,12 @@ int main(int argc, char** argv) {
     SDL_QueryTexture(pTexture2, NULL, NULL, &playerRect2.w, &playerRect2.h);
     SDL_QueryTexture(pTextureFlag, NULL, NULL, &flagRect.w, &flagRect.h);
 
-    // Size
     playerRect1.w /= 20;
     playerRect1.h /= 20;
     playerRect2.w /= 20;
     playerRect2.h /= 20;
     flagRect.w /= 5;
 
-    // Start positions
     float player1X = playerRect1.w;
     float player1Y = playerRect1.h; 
 
@@ -104,148 +100,103 @@ int main(int argc, char** argv) {
     bool up1, down1, left1, right1;
     bool up2, down2, left2, right2;
 
-    while (!closeWindow) {
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            switch (event.type) {
-                case SDL_QUIT:
-                    closeWindow = true;
-                    break;
-                case SDL_KEYDOWN:
-                    switch (event.key.keysym.scancode) {
-                        case SDL_SCANCODE_W:
-                            up1 = true;
-                            break;
-                        case SDL_SCANCODE_A:
-                            left1 = true;
-                            break;
-                        case SDL_SCANCODE_S:
-                            down1 = true;
-                            break;
-                        case SDL_SCANCODE_D:
-                            right1 = true;
-                            break;
-                        case SDL_SCANCODE_UP:
-                            up2 = true;
-                            break;
-                        case SDL_SCANCODE_LEFT:
-                            left2 = true;
-                            break;
-                        case SDL_SCANCODE_DOWN:
-                            down2 = true;
-                            break;
-                        case SDL_SCANCODE_RIGHT:
-                            right2 = true;
-                            break;
-                    }
-                    break;
-                case SDL_KEYUP:
-                    switch (event.key.keysym.scancode) {
-                        case SDL_SCANCODE_W:
-                            up1 = false;
-                            break;
-                        case SDL_SCANCODE_A:
-                            left1 = false;
-                            break;
-                        case SDL_SCANCODE_S:
-                            down1 = false;
-                            break;
-                        case SDL_SCANCODE_D:
-                            right1 = false;
-                            break;
-                        case SDL_SCANCODE_UP:
-                            up2 = false;
-                            break;
-                        case SDL_SCANCODE_LEFT:
-                            left2 = false;
-                            break;
-                        case SDL_SCANCODE_DOWN:
-                            down2 = false;
-                            break;
-                        case SDL_SCANCODE_RIGHT:
-                            right2 = false;
-                            break;
-                    }
-                    break;
-            }
+   while (!closeWindow) {
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+            case SDL_QUIT:
+                closeWindow = true;
+                break;
+            case SDL_KEYDOWN:
+                switch (event.key.keysym.scancode) {
+                    case SDL_SCANCODE_W:
+                        up1 = true;
+                        break;
+                    case SDL_SCANCODE_A:
+                        left1 = true;
+                        break;
+                    case SDL_SCANCODE_S:
+                        down1 = true;
+                        break;
+                    case SDL_SCANCODE_D:
+                        right1 = true;
+                        break;
+                    case SDL_SCANCODE_UP:
+                        up2 = true;
+                        break;
+                    case SDL_SCANCODE_LEFT:
+                        left2 = true;
+                        break;
+                    case SDL_SCANCODE_DOWN:
+                        down2 = true;
+                        break;
+                    case SDL_SCANCODE_RIGHT:
+                        right2 = true;
+                        break;
+                }
+                break;
+            case SDL_KEYUP:
+                switch (event.key.keysym.scancode) {
+                    case SDL_SCANCODE_W:
+                        up1 = false;
+                        break;
+                    case SDL_SCANCODE_A:
+                        left1 = false;
+                        break;
+                    case SDL_SCANCODE_S:
+                        down1 = false;
+                        break;
+                    case SDL_SCANCODE_D:
+                        right1 = false;
+                        break;
+                    case SDL_SCANCODE_UP:
+                        up2 = false;
+                        break;
+                    case SDL_SCANCODE_LEFT:
+                        left2 = false;
+                        break;
+                    case SDL_SCANCODE_DOWN:
+                        down2 = false;
+                        break;
+                    case SDL_SCANCODE_RIGHT:
+                        right2 = false;
+                        break;
+                }
+                break;
         }
-
-        SDL_SetRenderDrawColor(pRenderer, 255, 255, 255, 255);
-        SDL_RenderClear(pRenderer);
-
-        SDL_Rect srcRect = { flagFrame * flagRect.w, 0, flagRect.w, flagRect.h };
-        SDL_RenderCopy(pRenderer, pTextureFlag, &srcRect, &flagRect);
-        SDL_RenderPresent(pRenderer);
-
-        flagFrame = (flagFrame + 1) % 5;
-
-        // Calculate distance between player 1 and flag
-        float distToPlayer1 = sqrt(pow(player1X - flagRect.x, 2) + pow(player1Y - flagRect.y, 2));
-
-        // Calculate distance between player 2 and flag
-        float distToPlayer2 = sqrt(pow(player2X - flagRect.x, 2) + pow(player2Y - flagRect.y, 2));
-
-        // Calculate distance between player 1 and player 2
-        float distBetweenPlayers = sqrt(pow(player1X - player2X, 2) + pow(player1Y - player2Y, 2));
-
-        // If player 1 is closer to the flag and within a certain distance threshold, move the flag towards player 1
-        if (distToPlayer1 < distToPlayer2 && distToPlayer1 < distBetweenPlayers && distToPlayer1 < CLOSE_DISTANCE_THRESHOLD) {
-            float dx = player1X - flagRect.x;
-            float dy = player1Y - flagRect.y;
-            float length = sqrt(dx * dx + dy * dy);
-            if (length != 0) {
-                dx /= length;
-                dy /= length;
-            }
-            flagRect.x += dx * FLAG_SPEED;
-            flagRect.y += dy * FLAG_SPEED;
-        }
-        // If player 2 is closer to the flag and within a certain distance threshold, move the flag towards player 2
-        else if (distToPlayer2 < distToPlayer1 && distToPlayer2 < distBetweenPlayers && distToPlayer2 < CLOSE_DISTANCE_THRESHOLD) {
-            float dx = player2X - flagRect.x;
-            float dy = player2Y - flagRect.y;
-            float length = sqrt(dx * dx + dy * dy);
-            if (length != 0) {
-                dx /= length;
-                dy /= length;
-            }
-            flagRect.x += dx * FLAG_SPEED;
-            flagRect.y += dy * FLAG_SPEED;
-        }
-
-        player1VelocityX = player1VelocityY = 0;
-        if (up1 && !down1) player1VelocityY = -SPEED;
-        if (down1 && !up1) player1VelocityY = SPEED;
-        if (left1 && !right1) player1VelocityX = -SPEED;
-        if (right1 && !left1) player1VelocityX = SPEED;
-        player1X += player1VelocityX / 60; 
-        player1Y += player1VelocityY / 60;
-        if (player1X < 0) player1X = 0;
-        if (player1Y < 0) player1Y = 0;
-        if (player1X > WINDOW_WIDTH - playerRect1.w) player1X = WINDOW_WIDTH - playerRect1.w;
-        if (player1Y > WINDOW_HEIGHT - playerRect1.h) player1Y = WINDOW_HEIGHT - playerRect1.h;
-        playerRect1.x = player1X;
-        playerRect1.y = player1Y;
-
-        player2VelocityX = player2VelocityY = 0;
-        if (up2 && !down2) player2VelocityY = -SPEED;
-        if (down2 && !up2) player2VelocityY = SPEED;
-        if (left2 && !right2) player2VelocityX = -SPEED;
-        if (right2 && !left2) player2VelocityX = SPEED;
-        player2X += player2VelocityX / 60;
-        player2Y += player2VelocityY / 60;
-        if (player2X < 0) player2X = 0;
-        if (player2Y < 0) player2Y = 0;
-        if (player2X > WINDOW_WIDTH - playerRect2.w) player2X = WINDOW_WIDTH - playerRect2.w;
-        if (player2Y > WINDOW_HEIGHT - playerRect2.h) player2Y = WINDOW_HEIGHT - playerRect2.h;
-        playerRect2.x = player2X;
-        playerRect2.y = player2Y;
-
-        SDL_RenderCopy(pRenderer, pTexture1, NULL, &playerRect1);
-        SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
-        SDL_RenderPresent(pRenderer);
-        SDL_Delay(1000 / PLAYER_FRAME_RATE); 
     }
+
+    // Clear the renderer
+    SDL_SetRenderDrawColor(pRenderer, 255, 255, 255, 255);
+    SDL_RenderClear(pRenderer);
+
+    // Update flag animation frame
+    SDL_Rect srcRect = { flagFrame * flagRect.w, 0, flagRect.w, flagRect.h };
+    SDL_RenderCopy(pRenderer, pTextureFlag, &srcRect, &flagRect);
+
+    // Move flag logic...
+    moveFlag(&flagRect, player1X, player1Y, player2X, player2Y, CLOSE_DISTANCE_THRESHOLD, FLAG_SPEED);
+
+    // Increment flag frame
+    flagFrame = (flagFrame + 1) % 5;
+
+    // Handle player input and movement for player 1
+    handlePlayerInput(&playerRect1, &player1X, &player1Y, &player1VelocityX, &player1VelocityY, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT, playerRect1.w, playerRect1.h, SPEED);
+
+    // Handle player input and movement for player 2
+    handlePlayerInput(&playerRect2, &player2X, &player2Y, &player2VelocityX, &player2VelocityY, up2, down2, left2, right2, WINDOW_WIDTH, WINDOW_HEIGHT, playerRect2.w, playerRect2.h, SPEED);
+
+    // Render players
+    SDL_RenderCopy(pRenderer, pTexture1, NULL, &playerRect1);
+    SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
+
+    // Present renderer
+    SDL_RenderPresent(pRenderer);
+
+    // Delay for frame rate control
+    SDL_Delay(1000 / PLAYER_FRAME_RATE);
+}
+
 
     SDL_DestroyTexture(pTexture1);
     SDL_DestroyTexture(pTexture2);
