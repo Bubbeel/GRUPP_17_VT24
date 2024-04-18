@@ -4,7 +4,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
-#include "map.h"
 #include "gridMap.h"
 
 
@@ -44,16 +43,15 @@ int main(int argc, char** argv) {
 
     //background data
     SDL_Surface* pSurface1 = IMG_Load("resources/player1.png");
-    SDL_Surface* pSurface2 = IMG_Load("resources/player2.png");
+    SDL_Surface* pSurface2 = IMG_Load("resources/Ship.png");
     SDL_Surface* pSurfaceFlag = IMG_Load("resources/spritesheet.png");
-    //SDL_Surface *mapSurface = SDL_CreateRGBSurface(0, GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE, 32, 0, 0, 0, 0);
-    //SDL_FillRect(mapSurface, NULL, SDL_MapRGBA(mapSurface->format, 255, 255, 255, 255)); // Fill surface with white
 
-    //create GridMap obj
+    //create GridMap obj and initialize GridMap
     GridMap map;
-
-    //Initialize the GridMap
-    initializeGridMap(&map);
+    //initializeGridMap(&map);
+    loadMapFromFile("map.txt", &map);
+    SDL_Texture* gridTexture;
+    gridTexture = loadGridMap(pRenderer);
 
 
     if (!pSurface1 || !pSurface2 || !pSurfaceFlag) {
@@ -67,11 +65,9 @@ int main(int argc, char** argv) {
     SDL_Texture* pTexture1 = SDL_CreateTextureFromSurface(pRenderer, pSurface1);
     SDL_Texture* pTexture2 = SDL_CreateTextureFromSurface(pRenderer, pSurface2);
     SDL_Texture* pTextureFlag = SDL_CreateTextureFromSurface(pRenderer, pSurfaceFlag);
-    //SDL_Texture *mapTexture = SDL_CreateTextureFromSurface(pRenderer, mapSurface);
     SDL_FreeSurface(pSurface1);
     SDL_FreeSurface(pSurface2);
     SDL_FreeSurface(pSurfaceFlag);
-    //SDL_FreeSurface(mapSurface);
 
     if (!pTexture1 || !pTexture2 || !pTextureFlag) {
         printf("Error: %s\n", SDL_GetError());
@@ -116,8 +112,8 @@ int main(int argc, char** argv) {
     bool up1, down1, left1, right1;
     bool up2, down2, left2, right2;
 
-    printf("Aloha amigos como estas");
 
+    printf("Aloha amigos como estas\n");
     while (!closeWindow) {
         SDL_Event event;
 
@@ -185,12 +181,9 @@ int main(int argc, char** argv) {
             }
         }
 
-        //SDL_SetRenderDrawColor(pRenderer, 255, 255, 255, 255);
         SDL_RenderClear(pRenderer);
 
         SDL_Rect srcRect = { flagFrame * flagRect.w, 0, flagRect.w, flagRect.h };
-        SDL_RenderCopy(pRenderer, pTextureFlag, &srcRect, &flagRect);
-        SDL_RenderPresent(pRenderer);
 
         flagFrame = (flagFrame + 1) % 5;
 
@@ -256,10 +249,10 @@ int main(int argc, char** argv) {
         playerRect2.x = player2X;
         playerRect2.y = player2Y;
 
-        renderGridMap(pRenderer, &map);
+        renderGridMap(pRenderer, &map, gridTexture);
         SDL_RenderCopy(pRenderer, pTexture1, NULL, &playerRect1);
         SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
-        //SDL_RenderCopy(pRenderer, mapTexture, NULL, NULL);
+        SDL_RenderCopy(pRenderer, pTextureFlag, &srcRect, &flagRect);
         SDL_RenderPresent(pRenderer);
         SDL_Delay(1000 / PLAYER_FRAME_RATE); 
     }
@@ -267,10 +260,11 @@ int main(int argc, char** argv) {
     SDL_DestroyTexture(pTexture1);
     SDL_DestroyTexture(pTexture2);
     SDL_DestroyTexture(pTextureFlag);
-    //SDL_DestroyTexture(mapTexture);
+    SDL_DestroyTexture(gridTexture);
     SDL_DestroyRenderer(pRenderer);
     SDL_DestroyWindow(pWindow);
 
+    printf("Adios amigos\n");
     SDL_Quit();
     return 0;
 }
