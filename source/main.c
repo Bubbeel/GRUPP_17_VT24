@@ -5,10 +5,12 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include "map.h"
+#include "gridMap.h"
+
 
 #define SPEED 100
-#define WINDOW_WIDTH 1000
-#define WINDOW_HEIGHT 700
+#define WINDOW_WIDTH 1200
+#define WINDOW_HEIGHT 600
 
 #define FLAG_FRAME_RATE 10
 #define PLAYER_FRAME_RATE 60
@@ -17,20 +19,15 @@
 #define CLOSE_DISTANCE_THRESHOLD 200
 #define FLAG_SPEED 2
 
-//renderBackground initialization for GridMap
-void renderBackground(SDL_Renderer *pRenderer, SDL_Texture *mTile, SDL_Rect gTiles[]);
-
 int main(int argc, char** argv) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         printf("Error: %s\n", SDL_GetError());
         return 1;
     }
 
-
     int flagX, flagY;
 
-
-    SDL_Window* pWindow = SDL_CreateWindow("Enkelt exempel 1", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+    SDL_Window* pWindow = SDL_CreateWindow("CTF Gaming", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     if (!pWindow) {
         printf("Error: %s\n", SDL_GetError());
         SDL_Quit();
@@ -46,12 +43,18 @@ int main(int argc, char** argv) {
     }
 
     //background data
-    SDL_Texture *mTiles = NULL;
-    SDL_Rect gTiles[16];
-
     SDL_Surface* pSurface1 = IMG_Load("resources/player1.png");
     SDL_Surface* pSurface2 = IMG_Load("resources/player2.png");
     SDL_Surface* pSurfaceFlag = IMG_Load("resources/spritesheet.png");
+    //SDL_Surface *mapSurface = SDL_CreateRGBSurface(0, GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE, 32, 0, 0, 0, 0);
+    //SDL_FillRect(mapSurface, NULL, SDL_MapRGBA(mapSurface->format, 255, 255, 255, 255)); // Fill surface with white
+
+    //create GridMap obj
+    GridMap map;
+
+    //Initialize the GridMap
+    initializeGridMap(&map);
+
 
     if (!pSurface1 || !pSurface2 || !pSurfaceFlag) {
         printf("Error: %s\n", SDL_GetError());
@@ -64,10 +67,11 @@ int main(int argc, char** argv) {
     SDL_Texture* pTexture1 = SDL_CreateTextureFromSurface(pRenderer, pSurface1);
     SDL_Texture* pTexture2 = SDL_CreateTextureFromSurface(pRenderer, pSurface2);
     SDL_Texture* pTextureFlag = SDL_CreateTextureFromSurface(pRenderer, pSurfaceFlag);
+    //SDL_Texture *mapTexture = SDL_CreateTextureFromSurface(pRenderer, mapSurface);
     SDL_FreeSurface(pSurface1);
     SDL_FreeSurface(pSurface2);
     SDL_FreeSurface(pSurfaceFlag);
-
+    //SDL_FreeSurface(mapSurface);
 
     if (!pTexture1 || !pTexture2 || !pTextureFlag) {
         printf("Error: %s\n", SDL_GetError());
@@ -91,7 +95,7 @@ int main(int argc, char** argv) {
     playerRect2.h /= 20;
     flagRect.w /= 5;
 
-    // Start positions
+    //Start positions
     float player1X = playerRect1.w;
     float player1Y = playerRect1.h; 
 
@@ -111,6 +115,8 @@ int main(int argc, char** argv) {
     bool closeWindow = false;
     bool up1, down1, left1, right1;
     bool up2, down2, left2, right2;
+
+    printf("Aloha amigos como estas");
 
     while (!closeWindow) {
         SDL_Event event;
@@ -179,7 +185,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        SDL_SetRenderDrawColor(pRenderer, 255, 255, 255, 255);
+        //SDL_SetRenderDrawColor(pRenderer, 255, 255, 255, 255);
         SDL_RenderClear(pRenderer);
 
         SDL_Rect srcRect = { flagFrame * flagRect.w, 0, flagRect.w, flagRect.h };
@@ -250,12 +256,10 @@ int main(int argc, char** argv) {
         playerRect2.x = player2X;
         playerRect2.y = player2Y;
 
-        printf("TileX %d, TileY %d \n", playerRect1.w, playerRect1.h);
-
-        SDL_RenderClear(pRenderer);
-        renderBackground(pRenderer, mTiles, gTiles);
+        renderGridMap(pRenderer, &map);
         SDL_RenderCopy(pRenderer, pTexture1, NULL, &playerRect1);
         SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
+        //SDL_RenderCopy(pRenderer, mapTexture, NULL, NULL);
         SDL_RenderPresent(pRenderer);
         SDL_Delay(1000 / PLAYER_FRAME_RATE); 
     }
@@ -263,26 +267,10 @@ int main(int argc, char** argv) {
     SDL_DestroyTexture(pTexture1);
     SDL_DestroyTexture(pTexture2);
     SDL_DestroyTexture(pTextureFlag);
+    //SDL_DestroyTexture(mapTexture);
     SDL_DestroyRenderer(pRenderer);
     SDL_DestroyWindow(pWindow);
 
     SDL_Quit();
     return 0;
-}
-
-//renderBackground for TileMap
-void renderBackground(SDL_Renderer *pRenderer, SDL_Texture *mTiles, SDL_Rect gTiles[]){
-    SDL_Rect position;
-    position.y = 0;
-    position.x = 0;
-    position.h = getTileHeight();
-    position.w = getTileWidth();
-    
-    for (int i = 0; i<getTileColumns(); i++) {
-        for (int j = 0; j<getTileRows(); j++) {
-            position.y = i*getTileHeight();
-            position.x = j*getTileWidth();
-            SDL_RenderCopyEx(pRenderer, mTiles, &gTiles[getTileGrid(i,j)], &position, 0, NULL, SDL_FLIP_NONE);
-        }
-    }
 }

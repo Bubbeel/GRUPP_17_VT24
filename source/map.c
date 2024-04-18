@@ -78,36 +78,6 @@ PUBLIC int collidesWithImpassableTile(int x, int y){
     if(tileGrid[tileX][tileY] > 0x09){
         printf("Collision tl\n");
     }
-
-    
-
-    /*
-    tileX = (x+3) >> 3;
-    tileY = (y+12) >> 3;
-    //printf("TileX: %d TileY: %d\n", tileX, tileY);
-    if(tileGrid[tileX][tileY] > 0x09){
-        printf("Collision bl\n");
-    }
-
-    tileX = (x+12) >> 3;
-    tileY = (y+3) >> 3;
-    //printf("TileX: %d TileY: %d\n", tileX, tileY);
-    if(tileGrid[tileX][tileY] > 0x09){
-        printf("Collision tr\n");
-    }
-
-    tileX = (x+12) >> 3;
-    tileY = (y+12) >> 3;
-    //printf("TileX: %d TileY: %d\n", tileX, tileY);
-    if(tileGrid[tileX][tileY] > 0x09){
-        printf("Collision br\n");
-    }
-    */
-
-    
-
-
-    return 1;
 }
 
 
