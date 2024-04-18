@@ -23,7 +23,7 @@ void initializeGridMap(GridMap* map) {
             else
             {
                 map->cells[x][y].type = OBSTACLE;
-                if(y%2 != 0)
+                if(y%2 == 0)
                 {
                     map->cells[x][y].type = EMPTY;
                 }
