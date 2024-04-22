@@ -15,7 +15,7 @@
 #define PLAYER_FRAME_RATE 60
 
 #define CLOSE_DISTANCE_THRESHOLD 200
-#define FLAG_SPEED 2
+#define FLAG_SPEED 10
 
 int main(int argc, char** argv) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
