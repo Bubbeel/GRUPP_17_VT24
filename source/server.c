@@ -14,7 +14,7 @@ int main() {
 
     SDLNet_UDP_Recv(serverSocket, packet);
 
-    printf("Meddelande från klienten: %s\n", (char *)packet->data);
+    printf("Message from client: %s\n", (char *)packet->data);
 
     SDLNet_UDP_Send(serverSocket, -1, packet);
 
