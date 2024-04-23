@@ -1,32 +1,44 @@
 #include <stdio.h>
 #include <SDL2/SDL_net.h>
 
-int main() {
-    UDPsocket clientSocket;
-    UDPpacket *packet;
-    IPaddress serverIP;
+#define SERVER_IP "127.0.0.1"
+#define PORT 3000
 
+int main() {
+    IPaddress ip;
+    TCPsocket clientSocket;
+    char serverResponse[256];
+
+    //initialize SDL_net
     SDLNet_Init();
 
-    clientSocket = SDLNet_UDP_Open(0);
+    //resolve the host name and port number into an IPaddress type
+    if (SDLNet_ResolveHost(&ip, SERVER_IP, PORT) == -1) {
+        fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
+        SDLNet_Quit();
+        return 1;
+    }
 
-    packet = SDLNet_AllocPacket(512);
+    //create a tcp-socket for client
+    clientSocket = SDLNet_TCP_Open(&ip);
+    if (!clientSocket) {
+        fprintf(stderr, "SDLNet_TCP_Open: %s\n", SDLNet_GetError());
+        SDLNet_Quit();
+        return 1;
+    }
 
-    SDLNet_ResolveHost(&serverIP, "127.0.0.1", 3000);
+    //if connection to server succeded
+    if (clientSocket) {
+        SDLNet_TCP_Recv(clientSocket, serverResponse, sizeof(serverResponse));
+        printf("Server says: %s\n", serverResponse);
 
-    packet->address = serverIP;
+        //close socket for client
+        SDLNet_TCP_Close(clientSocket);
+    } else {
+        printf("Failed to connect to server!\n");
+    }
 
-    strcpy((char *)packet->data, "Hello World");
-    
-    packet->len = strlen((char *)packet->data) + 1;
-
-    SDLNet_UDP_Send(clientSocket, -1, packet);
-
-    SDLNet_UDP_Recv(clientSocket, packet);
-
-    printf("Svar från servern: %s\n", (char *)packet->data);
-
-    SDLNet_FreePacket(packet);
+    //quit SDL_net
     SDLNet_Quit();
 
     return 0;
