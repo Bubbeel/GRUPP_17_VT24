@@ -14,7 +14,7 @@
 #define FLAG_FRAME_RATE 10
 #define PLAYER_FRAME_RATE 60
 
-#define CLOSE_DISTANCE_THRESHOLD 200
+#define CLOSE_DISTANCE_THRESHOLD 10
 #define FLAG_SPEED 2
 
 int main(int argc, char** argv) {
@@ -40,9 +40,18 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    Player* pPlayer = createPlayer(pRenderer, SPEED);
+    if (!pPlayer) {
+        printf("Failed to create player, Error: %s\n", SDL_GetError());
+        SDL_DestroyRenderer(pRenderer);
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;
+    }
+
     SDL_Surface* pSurface1 = IMG_Load("resources/player1.png");
     SDL_Surface* pSurface2 = IMG_Load("resources/player2.png");
-    SDL_Surface* pSurfaceFlag = IMG_Load("resources/spritesheet.png");
+    SDL_Surface* pSurfaceFlag = IMG_Load("resources/flag.png");
 
     if (!pSurface1 || !pSurface2 || !pSurfaceFlag) {
         printf("Error: %s\n", SDL_GetError());
@@ -166,6 +175,7 @@ int main(int argc, char** argv) {
         }
     }
 
+
     // Clear the renderer
     SDL_SetRenderDrawColor(pRenderer, 255, 255, 255, 255);
     SDL_RenderClear(pRenderer);
@@ -174,20 +184,19 @@ int main(int argc, char** argv) {
     SDL_Rect srcRect = { flagFrame * flagRect.w, 0, flagRect.w, flagRect.h };
     SDL_RenderCopy(pRenderer, pTextureFlag, &srcRect, &flagRect);
 
-    // Move flag logic...
-    moveFlag(&flagRect, player1X, player1Y, player2X, player2Y, CLOSE_DISTANCE_THRESHOLD, FLAG_SPEED);
+    moveFlag(&flagRect, pPlayer->playerX, pPlayer->playerY, player2X, player2Y, CLOSE_DISTANCE_THRESHOLD, FLAG_SPEED);
 
-    // Increment flag frame
+
     flagFrame = (flagFrame + 1) % 5;
 
     // Handle player input and movement for player 1
-    handlePlayerInput(&playerRect1, &player1X, &player1Y, &player1VelocityX, &player1VelocityY, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT, playerRect1.w, playerRect1.h, SPEED);
+    handlePlayerInput(&pPlayer->playerRect, &pPlayer->playerX, &pPlayer->playerY, &pPlayer->playervelocityX, &pPlayer->playervelocityY, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT, pPlayer->playerRect.w, pPlayer->playerRect.h, SPEED);
 
     // Handle player input and movement for player 2
     handlePlayerInput(&playerRect2, &player2X, &player2Y, &player2VelocityX, &player2VelocityY, up2, down2, left2, right2, WINDOW_WIDTH, WINDOW_HEIGHT, playerRect2.w, playerRect2.h, SPEED);
 
     // Render players
-    SDL_RenderCopy(pRenderer, pTexture1, NULL, &playerRect1);
+    renderPlayer(pPlayer,pRenderer);
     SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
 
     // Present renderer
@@ -196,8 +205,7 @@ int main(int argc, char** argv) {
     // Delay for frame rate control
     SDL_Delay(1000 / PLAYER_FRAME_RATE);
 }
-
-
+    destroyPlayer(pPlayer);
     SDL_DestroyTexture(pTexture1);
     SDL_DestroyTexture(pTexture2);
     SDL_DestroyTexture(pTextureFlag);
