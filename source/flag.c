@@ -1,33 +1,23 @@
 #include "flag.h"
-#include <math.h>
 
-void moveFlag(SDL_Rect *flagRect, float player1X, float player1Y, float player2X, float player2Y, float closeDistanceThreshold, float flagSpeed) {
-    // Calculate distance between player 1 and flag
-    float distToPlayer1 = sqrt(pow(player1X - flagRect->x, 2) + pow(player1Y - flagRect->y, 2));
-
-    // Calculate distance between player 2 and flag
-    float distToPlayer2 = sqrt(pow(player2X - flagRect->x, 2) + pow(player2Y - flagRect->y, 2));
-
-    if (distToPlayer1 < distToPlayer2 && distToPlayer1 < closeDistanceThreshold) {
-        float dx = player1X - flagRect->x;
-        float dy = player1Y - flagRect->y;
-        float length = sqrt(dx * dx + dy * dy);
-        if (length != 0) {
-            dx /= length;
-            dy /= length;
-        }
-        flagRect->x += dx * flagSpeed;
-        flagRect->y += dy * flagSpeed;
+Flag* createFlag(int x, int y) {
+    Flag* flag = (Flag*)malloc(sizeof(Flag));
+    if (flag != NULL) {
+        flag->x = x;
+        flag->y = y;
     }
-    else if (distToPlayer2 < distToPlayer1 && distToPlayer2 < closeDistanceThreshold) {
-        float dx = player2X - flagRect->x;
-        float dy = player2Y - flagRect->y;
-        float length = sqrt(dx * dx + dy * dy);
-        if (length != 0) {
-            dx /= length;
-            dy /= length;
-        }
-        flagRect->x += dx * flagSpeed;
-        flagRect->y += dy * flagSpeed;
+    return flag;
+}
+
+void destroyFlag(Flag* flag) {
+    if (flag != NULL) {
+        free(flag);
+    }
+}
+
+void updateFlagPosition(Flag* flag, int x, int y) {
+    if (flag != NULL) {
+        flag->x = x;
+        flag->y = y;
     }
 }
