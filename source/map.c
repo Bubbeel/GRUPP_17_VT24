@@ -1,4 +1,4 @@
-#include "../objects/map.h"
+#include "map.h"
 #define PUBLIC
 #define PRIVATE
 
