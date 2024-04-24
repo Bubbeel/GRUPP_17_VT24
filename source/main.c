@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
 
     //create GridMap obj and initialize GridMap
     GridMap map;
-    //initializeGridMap(&map);
+    //CHECK THE FILE TO MAKE SURE EVERYTHING IS OKAY
     loadMapFromFile("resources/map.txt", &map);
     SDL_Texture* gridTexture;
     gridTexture = loadGridMap(pRenderer);
