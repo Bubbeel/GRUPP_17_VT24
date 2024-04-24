@@ -1,18 +1,8 @@
-// flag.h
 #ifndef FLAG_H
 #define FLAG_H
 
-#include <stdio.h>
+#include <SDL2/SDL.h>
 
-// Flag structure
-typedef struct {
-    int x;  // X coordinate of the flag
-    int y;  // Y coordinate of the flag
-} Flag;
+void moveFlag(SDL_Rect *flagRect, float player1X, float player1Y, float player2X, float player2Y, float closeDistanceThreshold, float flagSpeed);
 
-// Function declarations
-Flag* createFlag(int x, int y);
-void destroyFlag(Flag* flag);
-void updateFlagPosition(Flag* flag, int x, int y);
-
-#endif // FLAG_H
+#endif /* FLAG_H */

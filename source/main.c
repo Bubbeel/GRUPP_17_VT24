@@ -4,6 +4,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+#include "objects/player.h"
+#include "objects/flag.h"
 #include "gridMap.h"
 
 
@@ -14,8 +16,7 @@
 #define FLAG_FRAME_RATE 10
 #define PLAYER_FRAME_RATE 60
 
-// Constants for close distance threshold and flag speed
-#define CLOSE_DISTANCE_THRESHOLD 200
+#define CLOSE_DISTANCE_THRESHOLD 10
 #define FLAG_SPEED 2
 
 int main(int argc, char** argv) {
@@ -36,6 +37,24 @@ int main(int argc, char** argv) {
     SDL_Renderer* pRenderer = SDL_CreateRenderer(pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!pRenderer) {
         printf("Error: %s\n", SDL_GetError());
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;
+    }
+
+    Player* pPlayer = createPlayer(pRenderer, SPEED);
+    if (!pPlayer) {
+        printf("Failed to create player, Error: %s\n", SDL_GetError());
+        SDL_DestroyRenderer(pRenderer);
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;
+    }
+
+    Player* pPlayer = createPlayer(pRenderer, SPEED);
+    if (!pPlayer) {
+        printf("Failed to create player, Error: %s\n", SDL_GetError());
+        SDL_DestroyRenderer(pRenderer);
         SDL_DestroyWindow(pWindow);
         SDL_Quit();
         return 1;
@@ -84,7 +103,6 @@ int main(int argc, char** argv) {
     SDL_QueryTexture(pTexture2, NULL, NULL, &playerRect2.w, &playerRect2.h);
     SDL_QueryTexture(pTextureFlag, NULL, NULL, &flagRect.w, &flagRect.h);
 
-    // Size
     playerRect1.w /= 20;
     playerRect1.h /= 20;
     playerRect2.w /= 20;
@@ -183,80 +201,32 @@ int main(int argc, char** argv) {
 
         SDL_RenderClear(pRenderer);
 
-        SDL_Rect srcRect = { flagFrame * flagRect.w, 0, flagRect.w, flagRect.h };
+    // Update flag animation frame
+    SDL_Rect srcRect = { flagFrame * flagRect.w, 0, flagRect.w, flagRect.h };
+    SDL_RenderCopy(pRenderer, pTextureFlag, &srcRect, &flagRect);
 
-        flagFrame = (flagFrame + 1) % 5;
+    moveFlag(&flagRect, pPlayer->playerX, pPlayer->playerY, player2X, player2Y, CLOSE_DISTANCE_THRESHOLD, FLAG_SPEED);
 
-        // Calculate distance between player 1 and flag
-        float distToPlayer1 = sqrt(pow(player1X - flagRect.x, 2) + pow(player1Y - flagRect.y, 2));
 
-        // Calculate distance between player 2 and flag
-        float distToPlayer2 = sqrt(pow(player2X - flagRect.x, 2) + pow(player2Y - flagRect.y, 2));
+    flagFrame = (flagFrame + 1) % 5;
 
-        // Calculate distance between player 1 and player 2
-        float distBetweenPlayers = sqrt(pow(player1X - player2X, 2) + pow(player1Y - player2Y, 2));
+    // Handle player input and movement for player 1
+    handlePlayerInput(&pPlayer->playerRect, &pPlayer->playerX, &pPlayer->playerY, &pPlayer->playervelocityX, &pPlayer->playervelocityY, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT, pPlayer->playerRect.w, pPlayer->playerRect.h, SPEED);
 
-        // If player 1 is closer to the flag and within a certain distance threshold, move the flag towards player 1
-        if (distToPlayer1 < distToPlayer2 && distToPlayer1 < distBetweenPlayers && distToPlayer1 < CLOSE_DISTANCE_THRESHOLD) {
-            float dx = player1X - flagRect.x;
-            float dy = player1Y - flagRect.y;
-            float length = sqrt(dx * dx + dy * dy);
-            if (length != 0) {
-                dx /= length;
-                dy /= length;
-            }
-            flagRect.x += dx * FLAG_SPEED;
-            flagRect.y += dy * FLAG_SPEED;
-        }
-        // If player 2 is closer to the flag and within a certain distance threshold, move the flag towards player 2
-        else if (distToPlayer2 < distToPlayer1 && distToPlayer2 < distBetweenPlayers && distToPlayer2 < CLOSE_DISTANCE_THRESHOLD) {
-            float dx = player2X - flagRect.x;
-            float dy = player2Y - flagRect.y;
-            float length = sqrt(dx * dx + dy * dy);
-            if (length != 0) {
-                dx /= length;
-                dy /= length;
-            }
-            flagRect.x += dx * FLAG_SPEED;
-            flagRect.y += dy * FLAG_SPEED;
-        }
+    // Handle player input and movement for player 2
+    handlePlayerInput(&playerRect2, &player2X, &player2Y, &player2VelocityX, &player2VelocityY, up2, down2, left2, right2, WINDOW_WIDTH, WINDOW_HEIGHT, playerRect2.w, playerRect2.h, SPEED);
 
-        player1VelocityX = player1VelocityY = 0;
-        if (up1 && !down1) player1VelocityY = -SPEED;
-        if (down1 && !up1) player1VelocityY = SPEED;
-        if (left1 && !right1) player1VelocityX = -SPEED;
-        if (right1 && !left1) player1VelocityX = SPEED;
-        player1X += player1VelocityX / 60; 
-        player1Y += player1VelocityY / 60;
-        if (player1X < 0) player1X = 0;
-        if (player1Y < 0) player1Y = 0;
-        if (player1X > WINDOW_WIDTH - playerRect1.w) player1X = WINDOW_WIDTH - playerRect1.w;
-        if (player1Y > WINDOW_HEIGHT - playerRect1.h) player1Y = WINDOW_HEIGHT - playerRect1.h;
-        playerRect1.x = player1X;
-        playerRect1.y = player1Y;
+    // Render players
+    renderPlayer(pPlayer,pRenderer);
+    SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
 
-        player2VelocityX = player2VelocityY = 0;
-        if (up2 && !down2) player2VelocityY = -SPEED;
-        if (down2 && !up2) player2VelocityY = SPEED;
-        if (left2 && !right2) player2VelocityX = -SPEED;
-        if (right2 && !left2) player2VelocityX = SPEED;
-        player2X += player2VelocityX / 60;
-        player2Y += player2VelocityY / 60;
-        if (player2X < 0) player2X = 0;
-        if (player2Y < 0) player2Y = 0;
-        if (player2X > WINDOW_WIDTH - playerRect2.w) player2X = WINDOW_WIDTH - playerRect2.w;
-        if (player2Y > WINDOW_HEIGHT - playerRect2.h) player2Y = WINDOW_HEIGHT - playerRect2.h;
-        playerRect2.x = player2X;
-        playerRect2.y = player2Y;
+    // Present renderer
+    SDL_RenderPresent(pRenderer);
 
-        renderGridMap(pRenderer, &map, gridTexture);
-        SDL_RenderCopy(pRenderer, pTexture1, NULL, &playerRect1);
-        SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
-        SDL_RenderCopy(pRenderer, pTextureFlag, &srcRect, &flagRect);
-        SDL_RenderPresent(pRenderer);
-        SDL_Delay(1000 / PLAYER_FRAME_RATE); 
-    }
-
+    // Delay for frame rate control
+    SDL_Delay(1000 / PLAYER_FRAME_RATE);
+}
+    destroyPlayer(pPlayer);
     SDL_DestroyTexture(pTexture1);
     SDL_DestroyTexture(pTexture2);
     SDL_DestroyTexture(pTextureFlag);
