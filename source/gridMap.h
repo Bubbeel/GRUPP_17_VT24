@@ -4,9 +4,9 @@
 #define gridmap_h
 
 // Define the size of the grid
-#define GRID_WIDTH 100
-#define GRID_HEIGHT 37
-#define CELL_SIZE 16
+#define GRID_WIDTH 44
+#define GRID_HEIGHT 25
+#define CELL_SIZE 32
 
 // Types of data that can be stored in each grid cell
 typedef enum 
@@ -29,7 +29,7 @@ typedef struct
 // Defines the structure to represent the GridMap
 typedef struct 
 {
-    GridCell cells[GRID_WIDTH][GRID_HEIGHT]; // 2D array of grid cells
+    GridCell cells[GRID_HEIGHT][GRID_WIDTH]; // 2D array of grid cells
 } GridMap;
 
 // Declare function prototypes

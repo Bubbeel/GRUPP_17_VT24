@@ -10,7 +10,7 @@
 
 
 #define SPEED 100
-#define WINDOW_WIDTH 1200
+#define WINDOW_WIDTH 1408
 #define WINDOW_HEIGHT 800
 
 #define FLAG_FRAME_RATE 10
@@ -25,6 +25,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    printf("Hallo everynyan \n");
     int flagX, flagY;
 
     SDL_Window* pWindow = SDL_CreateWindow("CTF Gaming", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
@@ -51,19 +52,10 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    Player* pPlayer = createPlayer(pRenderer, SPEED);
-    if (!pPlayer) {
-        printf("Failed to create player, Error: %s\n", SDL_GetError());
-        SDL_DestroyRenderer(pRenderer);
-        SDL_DestroyWindow(pWindow);
-        SDL_Quit();
-        return 1;
-    }
-
     //background data
     SDL_Surface* pSurface1 = IMG_Load("resources/player1.png");
     SDL_Surface* pSurface2 = IMG_Load("resources/Ship.png");
-    SDL_Surface* pSurfaceFlag = IMG_Load("resources/spritesheet.png");
+    SDL_Surface* pSurfaceFlag = IMG_Load("resources/flag.png");
 
     //create GridMap obj and initialize GridMap
     GridMap map;
@@ -200,6 +192,9 @@ int main(int argc, char** argv) {
         }
 
         SDL_RenderClear(pRenderer);
+
+    //rendering Grid Map
+    renderGridMap(pRenderer, &map, gridTexture);
 
     // Update flag animation frame
     SDL_Rect srcRect = { flagFrame * flagRect.w, 0, flagRect.w, flagRect.h };

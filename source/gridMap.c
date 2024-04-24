@@ -15,9 +15,9 @@ void loadMapFromFile(const char* filename, GridMap* map)
         return;
     }
 
-    for(int y = 0; y < 50; y++)
+    for(int y = 0; y < GRID_HEIGHT; y++)
     {
-        for(int x = 0; x < 300; x++)
+        for(int x = 0; x < GRID_WIDTH; x++)
         {
             char cellType;
             if(fscanf(file, " %c", &cellType) != 1)
@@ -26,8 +26,6 @@ void loadMapFromFile(const char* filename, GridMap* map)
                 fclose(file);
                 return;
             }
-            //printf("Numbah: x: %d, y: %d\n", x, y);
-            //printf("Character: %c\n", cellType);
             switch(cellType)
             {
                 case 'E':
@@ -47,7 +45,6 @@ void loadMapFromFile(const char* filename, GridMap* map)
             }
         }
     } 
-    printf("%d, %d\n", GRID_HEIGHT, GRID_WIDTH);
     fclose(file);
 }
 
@@ -99,21 +96,16 @@ SDL_Texture* loadGridMap(SDL_Renderer *renderer)
 
 void renderGridMap(SDL_Renderer *renderer, GridMap *map, SDL_Texture* texture) 
 {
-    int windowWidth, windowHeight;
-    SDL_GetRendererOutputSize(renderer, &windowWidth, &windowHeight);
+    // int windowWidth, windowHeight;
+    // SDL_GetRendererOutputSize(renderer, &windowWidth, &windowHeight);
 
-    float cellWidth = (float)windowWidth / 300;
-    float cellHeight = (float)windowHeight / 50;
-    printf("CW: %d, CH: %d\n", cellWidth, cellHeight);
-
-    for (int y = 0; y < 50; y++) {
-        for (int x = 0; x < 300; x++) {
-            SDL_Rect cellRect = {x * cellWidth, y * cellHeight, cellWidth, cellHeight};
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            SDL_Rect cellRect = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
             switch (map->cells[y][x].type) {
                 case EMPTY:
                     SDL_SetRenderDrawColor(renderer, 0, 153, 0, 255); //leaving this if color is needed instead
                     //SDL_RenderCopy(renderer, texture, NULL, &cellRect);
-                    //printf("How fucking many are there %d, %d \n", x, y);
                     break;
                 case OBSTACLE:
                     SDL_SetRenderDrawColor(renderer, 0, 204, 204, 255); //leaving this if color is needed instead
