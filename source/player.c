@@ -1,4 +1,4 @@
-#include "player.h"
+#include "../objects/player.h"
 #include <SDL2/SDL_image.h>
 
 Player* createPlayer(SDL_Renderer* renderer, int speed) {

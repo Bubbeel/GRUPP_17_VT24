@@ -4,9 +4,9 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
-#include "objects/player.h"
-#include "objects/flag.h"
-#include "gridMap.h"
+#include "../objects/player.h"
+#include "../objects/flag.h"
+#include "../objects/gridMap.h"
 
 
 #define SPEED 100
