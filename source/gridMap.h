@@ -4,8 +4,8 @@
 #define gridmap_h
 
 // Define the size of the grid
-#define GRID_WIDTH 70
-#define GRID_HEIGHT 40
+#define GRID_WIDTH 100
+#define GRID_HEIGHT 37
 #define CELL_SIZE 16
 
 // Types of data that can be stored in each grid cell

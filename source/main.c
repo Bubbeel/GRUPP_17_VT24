@@ -9,7 +9,7 @@
 
 #define SPEED 100
 #define WINDOW_WIDTH 1200
-#define WINDOW_HEIGHT 600
+#define WINDOW_HEIGHT 800
 
 #define FLAG_FRAME_RATE 10
 #define PLAYER_FRAME_RATE 60
@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
     //create GridMap obj and initialize GridMap
     GridMap map;
     //initializeGridMap(&map);
-    loadMapFromFile("map.txt", &map);
+    loadMapFromFile("resources/map.txt", &map);
     SDL_Texture* gridTexture;
     gridTexture = loadGridMap(pRenderer);
 
@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
     printf("Aloha amigos como estas\n");
     while (!closeWindow) {
         SDL_Event event;
-
+        //printf("Hellow");
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
                 case SDL_QUIT:
