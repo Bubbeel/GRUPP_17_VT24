@@ -19,13 +19,21 @@
 #define CLOSE_DISTANCE_THRESHOLD 10
 #define FLAG_SPEED 2
 
+typedef struct
+{
+    SDL_Texture* texture;
+    SDL_Rect rect;
+    SDL_Surface surface;
+    char tag;
+} GameObject;
+
+
 int main(int argc, char** argv) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         printf("Error: %s\n", SDL_GetError());
         return 1;
     }
 
-    printf("Hallo everynyan \n");
     int flagX, flagY;
 
     SDL_Window* pWindow = SDL_CreateWindow("CTF Gaming", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
@@ -34,6 +42,18 @@ int main(int argc, char** argv) {
         SDL_Quit();
         return 1;
     }
+
+    // GameObject object;
+    // object.tag = "enemy";
+
+    // GameObject player;
+    // player.tag = "player";
+
+    // GameObject wall;
+    // wall.tag = "obstacle";
+
+    // GameObject projectile;
+    // projectile.tag = "projectile";
 
     SDL_Renderer* pRenderer = SDL_CreateRenderer(pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!pRenderer) {
@@ -56,6 +76,8 @@ int main(int argc, char** argv) {
     SDL_Surface* pSurface1 = IMG_Load("resources/player1.png");
     SDL_Surface* pSurface2 = IMG_Load("resources/Ship.png");
     SDL_Surface* pSurfaceFlag = IMG_Load("resources/flag.png");
+
+    int gridX, gridY;
 
     //create GridMap obj and initialize GridMap
     GridMap map;
@@ -102,19 +124,19 @@ int main(int argc, char** argv) {
     flagRect.w /= 5;
 
     //Start positions
-    float player1X = playerRect1.w;
-    float player1Y = playerRect1.h; 
+    int player1X = playerRect1.w;
+    int player1Y = playerRect1.h; 
 
-    float player2X = WINDOW_WIDTH - playerRect2.w; 
-    float player2Y = WINDOW_HEIGHT - playerRect2.h;
+    int player2X = WINDOW_WIDTH - playerRect2.w; 
+    int player2Y = WINDOW_HEIGHT - playerRect2.h;
 
     flagRect.x = (WINDOW_WIDTH - flagRect.w) / 2;
     flagRect.y = (WINDOW_HEIGHT - flagRect.h) / 2;
 
-    float player1VelocityX = 0;
-    float player1VelocityY = 0;
-    float player2VelocityX = 0;
-    float player2VelocityY = 0;
+    int player1VelocityX = 0;
+    int player1VelocityY = 0;
+    int player2VelocityX = 0;
+    int player2VelocityY = 0;
 
     int flagFrame = 0;
 
@@ -202,7 +224,6 @@ int main(int argc, char** argv) {
 
     moveFlag(&flagRect, pPlayer->playerX, pPlayer->playerY, player2X, player2Y, CLOSE_DISTANCE_THRESHOLD, FLAG_SPEED);
 
-
     flagFrame = (flagFrame + 1) % 5;
 
     // Handle player input and movement for player 1
@@ -214,6 +235,9 @@ int main(int argc, char** argv) {
     // Render players
     renderPlayer(pPlayer,pRenderer);
     SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
+
+    //printf("playerX: %d, playerY: %d\n", pPlayer->playerX, pPlayer->playerY);
+    getPlayerGridPosition(pPlayer->playerX, pPlayer->playerY, &pPlayer->playerGridX, &pPlayer->playerGridY);
 
     // Present renderer
     SDL_RenderPresent(pRenderer);

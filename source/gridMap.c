@@ -100,8 +100,10 @@ void renderGridMap(SDL_Renderer *renderer, GridMap *map, SDL_Texture* texture)
     }
 }
 
-// WIP!!! Need to figure out how to check position under player
-// void positionOnGrid()
-// {
-//     printf("TileX: %d, TileY: %d", map->cells[]);
-// }
+//Checks the position under player
+void getPlayerGridPosition(int playerX, int playerY, int* gridX, int* gridY) 
+{
+    *gridX = (playerX + CELL_SIZE/2) / CELL_SIZE;
+    *gridY = (playerY + CELL_SIZE/2) / CELL_SIZE;
+    //printf("Player position X: %d, Player position Y: %d\n", *gridX, *gridY);
+}

@@ -21,11 +21,12 @@ Player* createPlayer(SDL_Renderer* renderer, int speed) {
     }
 
     SDL_QueryTexture(pPlayer->pPlayerTexture, NULL, NULL, &pPlayer->playerRect.w, &pPlayer->playerRect.h);
-
     pPlayer->playerRect.w /= 20;
     pPlayer->playerRect.h /= 20;
+    //printf("playerRect.w: %d, playerRect.h: %d\n", pPlayer->playerRect.w, pPlayer->playerRect.h);
     pPlayer->playerX = pPlayer->playerRect.w;
     pPlayer->playerY = pPlayer->playerRect.h;
+    //printf("playerX: %d, playerY: %d\n", pPlayer->playerX, pPlayer->playerY);
     pPlayer->playervelocityX = 0;
     pPlayer->playervelocityY = 0;
     pPlayer->speed = speed;
@@ -33,7 +34,7 @@ Player* createPlayer(SDL_Renderer* renderer, int speed) {
     return pPlayer;
 }
 
-void handlePlayerInput(SDL_Rect *playerRect, float *playerX, float *playerY, float *playerVelocityX, float *playerVelocityY, int up, int down, int left, int right, int windowWidth, int windowHeight, int playerRectWidth, int playerRectHeight, int speed) {
+void handlePlayerInput(SDL_Rect *playerRect, int *playerX, int *playerY, int *playerVelocityX, int *playerVelocityY, int up, int down, int left, int right, int windowWidth, int windowHeight, int playerRectWidth, int playerRectHeight, int speed) {
     *playerVelocityX = *playerVelocityY = 0;
     if (up && !down) *playerVelocityY = -speed;
     if (down && !up) *playerVelocityY = speed;
