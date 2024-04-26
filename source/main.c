@@ -7,6 +7,7 @@
 #include "objects/player.h"
 #include "objects/flag.h"
 #include "gridMap.h"
+#include "collisionDetection.h"
 
 
 #define SPEED 100
@@ -19,6 +20,7 @@
 #define CLOSE_DISTANCE_THRESHOLD 10
 #define FLAG_SPEED 2
 
+// WIP - Konrad
 typedef struct
 {
     SDL_Texture* texture;
@@ -34,26 +36,12 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    int flagX, flagY;
-
     SDL_Window* pWindow = SDL_CreateWindow("CTF Gaming", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     if (!pWindow) {
         printf("Error: %s\n", SDL_GetError());
         SDL_Quit();
         return 1;
     }
-
-    // GameObject object;
-    // object.tag = "enemy";
-
-    // GameObject player;
-    // player.tag = "player";
-
-    // GameObject wall;
-    // wall.tag = "obstacle";
-
-    // GameObject projectile;
-    // projectile.tag = "projectile";
 
     SDL_Renderer* pRenderer = SDL_CreateRenderer(pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!pRenderer) {
@@ -77,7 +65,8 @@ int main(int argc, char** argv) {
     SDL_Surface* pSurface2 = IMG_Load("resources/Ship.png");
     SDL_Surface* pSurfaceFlag = IMG_Load("resources/flag.png");
 
-    int gridX, gridY;
+    //temp data storage, if you put anything here, please try to keep all the data in their specific files if possible
+    int flagX, flagY;
 
     //create GridMap obj and initialize GridMap
     GridMap map;
@@ -130,8 +119,8 @@ int main(int argc, char** argv) {
     int player2X = WINDOW_WIDTH - playerRect2.w; 
     int player2Y = WINDOW_HEIGHT - playerRect2.h;
 
-    flagRect.x = (WINDOW_WIDTH - flagRect.w) / 2;
-    flagRect.y = (WINDOW_HEIGHT - flagRect.h) / 2;
+    flagRect.x = WINDOW_WIDTH / 2;
+    flagRect.y = WINDOW_HEIGHT / 2;
 
     int player1VelocityX = 0;
     int player1VelocityY = 0;
@@ -215,14 +204,20 @@ int main(int argc, char** argv) {
 
         SDL_RenderClear(pRenderer);
 
-    //rendering Grid Map
+    // Collision Check with the flag
+    if (checkCollision(pPlayer->playerRect, flagRect))
+    {
+        flagRect.x = pPlayer->playerX;
+        flagRect.y = pPlayer->playerY;
+    }
+    // Render Grid Map
     renderGridMap(pRenderer, &map, gridTexture);
 
     // Update flag animation frame
     SDL_Rect srcRect = { flagFrame * flagRect.w, 0, flagRect.w, flagRect.h };
     SDL_RenderCopy(pRenderer, pTextureFlag, &srcRect, &flagRect);
 
-    moveFlag(&flagRect, pPlayer->playerX, pPlayer->playerY, player2X, player2Y, CLOSE_DISTANCE_THRESHOLD, FLAG_SPEED);
+    //moveFlag(&flagRect, pPlayer->playerX, pPlayer->playerY, player2X, player2Y, CLOSE_DISTANCE_THRESHOLD, FLAG_SPEED);
 
     flagFrame = (flagFrame + 1) % 5;
 
@@ -236,7 +231,7 @@ int main(int argc, char** argv) {
     renderPlayer(pPlayer,pRenderer);
     SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
 
-    //printf("playerX: %d, playerY: %d\n", pPlayer->playerX, pPlayer->playerY);
+    //probably not needed here, but left it just in case I forget to use it :) - Konrad
     getPlayerGridPosition(pPlayer->playerX, pPlayer->playerY, &pPlayer->playerGridX, &pPlayer->playerGridY);
 
     // Present renderer

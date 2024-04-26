@@ -3,6 +3,6 @@
 
 #include <SDL2/SDL.h>
 
-void moveFlag(SDL_Rect *flagRect, float player1X, float player1Y, float player2X, float player2Y, float closeDistanceThreshold, float flagSpeed);
+void moveFlag(SDL_Rect *flagRect, int player1X, int player1Y, int player2X, int player2Y, int closeDistanceThreshold, int flagSpeed);
 
 #endif /* FLAG_H */
