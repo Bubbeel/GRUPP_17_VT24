@@ -60,13 +60,21 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    Flag* flag = createFlag(pRenderer);
+    if(!flag)
+    {
+        printf("Failed to create flag, Error: %s\n", SDL_GetError());
+        SDL_DestroyRenderer(pRenderer);
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;
+    }
     //background data
-    SDL_Surface* pSurface1 = IMG_Load("resources/player1.png");
     SDL_Surface* pSurface2 = IMG_Load("resources/Ship.png");
-    SDL_Surface* pSurfaceFlag = IMG_Load("resources/flag.png");
 
     //temp data storage, if you put anything here, please try to keep all the data in their specific files if possible
-    int flagX, flagY;
+
+    //
 
     //create GridMap obj and initialize GridMap
     GridMap map;
@@ -75,23 +83,17 @@ int main(int argc, char** argv) {
     SDL_Texture* gridTexture;
     gridTexture = loadGridMap(pRenderer);
 
-
-    if (!pSurface1 || !pSurface2 || !pSurfaceFlag) {
+    if (!pPlayer->playerSurface || !pSurface2 || !flag->flagSurface) {
         printf("Error: %s\n", SDL_GetError());
         SDL_DestroyRenderer(pRenderer);
         SDL_DestroyWindow(pWindow);
         SDL_Quit();
         return 1;
     }
-
-    SDL_Texture* pTexture1 = SDL_CreateTextureFromSurface(pRenderer, pSurface1);
+    
     SDL_Texture* pTexture2 = SDL_CreateTextureFromSurface(pRenderer, pSurface2);
-    SDL_Texture* pTextureFlag = SDL_CreateTextureFromSurface(pRenderer, pSurfaceFlag);
-    SDL_FreeSurface(pSurface1);
     SDL_FreeSurface(pSurface2);
-    SDL_FreeSurface(pSurfaceFlag);
-
-    if (!pTexture1 || !pTexture2 || !pTextureFlag) {
+    if (!pPlayer->pPlayerTexture || !pTexture2 || !flag->flagTexture) {
         printf("Error: %s\n", SDL_GetError());
         SDL_DestroyRenderer(pRenderer);
         SDL_DestroyWindow(pWindow);
@@ -101,16 +103,10 @@ int main(int argc, char** argv) {
 
     SDL_Rect playerRect1;
     SDL_Rect playerRect2;
-    SDL_Rect flagRect;
-    SDL_QueryTexture(pTexture1, NULL, NULL, &playerRect1.w, &playerRect1.h);
     SDL_QueryTexture(pTexture2, NULL, NULL, &playerRect2.w, &playerRect2.h);
-    SDL_QueryTexture(pTextureFlag, NULL, NULL, &flagRect.w, &flagRect.h);
 
-    playerRect1.w /= 20;
-    playerRect1.h /= 20;
     playerRect2.w /= 20;
     playerRect2.h /= 20;
-    flagRect.w /= 5;
 
     //Start positions
     int player1X = playerRect1.w;
@@ -119,25 +115,23 @@ int main(int argc, char** argv) {
     int player2X = WINDOW_WIDTH - playerRect2.w; 
     int player2Y = WINDOW_HEIGHT - playerRect2.h;
 
-    flagRect.x = WINDOW_WIDTH / 2;
-    flagRect.y = WINDOW_HEIGHT / 2;
+    flag->flagRect.w /= 5;
+    flag->flagRect.x = WINDOW_WIDTH / 2;
+    flag->flagRect.y = WINDOW_HEIGHT / 2;
 
     int player1VelocityX = 0;
     int player1VelocityY = 0;
     int player2VelocityX = 0;
     int player2VelocityY = 0;
 
-    int flagFrame = 0;
-
     bool closeWindow = false;
-    bool up1, down1, left1, right1;
-    bool up2, down2, left2, right2;
+    bool up1 = false, down1 = false, left1 = false, right1 = false;
+    bool up2 = false, down2 = false, left2 = false, right2 = false;
 
 
     printf("Aloha amigos como estas\n");
     while (!closeWindow) {
         SDL_Event event;
-        //printf("Hellow");
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
                 case SDL_QUIT:
@@ -204,22 +198,22 @@ int main(int argc, char** argv) {
 
         SDL_RenderClear(pRenderer);
 
-    // Collision Check with the flag
-    if (checkCollision(pPlayer->playerRect, flagRect))
-    {
-        flagRect.x = pPlayer->playerX;
-        flagRect.y = pPlayer->playerY;
-    }
     // Render Grid Map
     renderGridMap(pRenderer, &map, gridTexture);
 
-    // Update flag animation frame
-    SDL_Rect srcRect = { flagFrame * flagRect.w, 0, flagRect.w, flagRect.h };
-    SDL_RenderCopy(pRenderer, pTextureFlag, &srcRect, &flagRect);
+    
+    // Collision Check with the flag
+    if (checkCollision(pPlayer->playerRect, flag->flagRect))
+    {
+        flag->flagRect.x = pPlayer->playerX;
+        flag->flagRect.y = pPlayer->playerY;
+    }
 
-    //moveFlag(&flagRect, pPlayer->playerX, pPlayer->playerY, player2X, player2Y, CLOSE_DISTANCE_THRESHOLD, FLAG_SPEED);
-
-    flagFrame = (flagFrame + 1) % 5;
+    // Update flag animation frame, need this in flag.c
+    // SDL_Rect srcRect = { flagFrame * flag->flagRect.w, 0, flag->flagRect.w, flag->flagRect.h };
+    // SDL_RenderCopy(pRenderer, flag->flagTexture, &srcRect, &flag->flagRect);
+    // flagFrame = (flagFrame + 1) % 5;
+    flagAnimation(pRenderer, flag);
 
     // Handle player input and movement for player 1
     handlePlayerInput(&pPlayer->playerRect, &pPlayer->playerX, &pPlayer->playerY, &pPlayer->playervelocityX, &pPlayer->playervelocityY, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT, pPlayer->playerRect.w, pPlayer->playerRect.h, SPEED);
@@ -231,7 +225,7 @@ int main(int argc, char** argv) {
     renderPlayer(pPlayer,pRenderer);
     SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
 
-    //probably not needed here, but left it just in case I forget to use it :) - Konrad
+    // Probably not needed here, but left it just in case I forget to use it :) - Konrad
     getPlayerGridPosition(pPlayer->playerX, pPlayer->playerY, &pPlayer->playerGridX, &pPlayer->playerGridY);
 
     // Present renderer
@@ -241,9 +235,10 @@ int main(int argc, char** argv) {
     SDL_Delay(1000 / PLAYER_FRAME_RATE);
 }
     destroyPlayer(pPlayer);
-    SDL_DestroyTexture(pTexture1);
+    destroyFlag(flag);
+    SDL_DestroyTexture(pPlayer->pPlayerTexture);
     SDL_DestroyTexture(pTexture2);
-    SDL_DestroyTexture(pTextureFlag);
+    SDL_DestroyTexture(flag->flagTexture);
     SDL_DestroyTexture(gridTexture);
     SDL_DestroyRenderer(pRenderer);
     SDL_DestroyWindow(pWindow);

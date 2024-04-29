@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 
 typedef struct {
+    SDL_Surface* playerSurface;
     SDL_Texture* pPlayerTexture;
     SDL_Rect playerRect;
     int playerX, playerY;

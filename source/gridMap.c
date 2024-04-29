@@ -57,7 +57,7 @@ SDL_Texture* loadGridMap(SDL_Renderer *renderer)
     {
         printf("Error: %s\n", IMG_GetError());
     }
-    printf("Surface loaded \n");
+    //printf("Surface loaded \n");
 
     SDL_Texture* pTextureTest = SDL_CreateTextureFromSurface(renderer, pSurfaceTest);
     SDL_FreeSurface(pSurfaceTest);
@@ -65,7 +65,7 @@ SDL_Texture* loadGridMap(SDL_Renderer *renderer)
     {   
         printf("Error: %s\n", SDL_GetError());
     }
-    printf("Texture loaded \n");
+    //printf("Texture loaded \n");
 
     return pTextureTest;
 }

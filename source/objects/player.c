@@ -1,20 +1,22 @@
 #include "player.h"
 #include <SDL2/SDL_image.h>
 
+//I recommend putting speed as a value that we put in player.speed in this function, and not define it in main.c
+//In theory if we want we can technically put #define SPEED 100 in player.c, but not in main.c
 Player* createPlayer(SDL_Renderer* renderer, int speed) {
     Player* pPlayer = malloc(sizeof(Player));
     if (!pPlayer) {
         return NULL;
     }
 
-    SDL_Surface* pPlayerSurface = IMG_Load("resources/player1.png");
-    if (!pPlayerSurface) {
+    pPlayer->playerSurface = IMG_Load("resources/player1.png");
+    if (!pPlayer->playerSurface) {
         free(pPlayer);
         return NULL;
     }
 
-    pPlayer->pPlayerTexture = SDL_CreateTextureFromSurface(renderer, pPlayerSurface);
-    SDL_FreeSurface(pPlayerSurface);
+    pPlayer->pPlayerTexture = SDL_CreateTextureFromSurface(renderer, pPlayer->playerSurface);
+    SDL_FreeSurface(pPlayer->playerSurface);
     if (!pPlayer->pPlayerTexture) {
         free(pPlayer);
         return NULL;

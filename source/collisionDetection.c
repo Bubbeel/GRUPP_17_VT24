@@ -22,25 +22,25 @@ int checkCollision(SDL_Rect a, SDL_Rect b)
 
     if( bottomA <= topB )
     {
-        printf("Collision not detected\n");
+        //printf("Collision not detected\n");
         return 0;
     }
 
     if( topA >= bottomB )
     {
-        printf("Collision not detected\n");
+        //printf("Collision not detected\n");
         return 0;
     }
 
     if( rightA <= leftB )
     {
-        printf("Collision not detected\n");
+        //printf("Collision not detected\n");
         return 0;
     }
 
     if( leftA >= rightB )
     {
-        printf("Collision not detected\n");
+        //printf("Collision not detected\n");
         return 0;
     }
     printf("Collision detected\n");
