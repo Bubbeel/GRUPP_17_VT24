@@ -5,8 +5,8 @@ LIBS = -L/usr/local/lib
 CFLAGS = -g $(INCLUDE) -c 
 LDFLAGS = $(LIBS) -lSDL2main -lSDL2_image -lSDL2 -lSDL2_ttf -lm -lSDL2_net
 
-CTFGame: main.o player.o flag.o gridMap.o client.o server.o
-	$(CC) -o CTFGame main.o player.o flag.o gridMap.o client.o server.o $(LDFLAGS)
+CTFGame: main.o player.o flag.o gridMap.o collisionDetection.o client.o server.o
+	gcc -o CTFGame main.o player.o flag.o gridMap.o collisionDetection.o client.o server.o $(LDFLAGS)
 
 main.o: $(SRCDIR)/main.c
 	$(CC) $(CFLAGS) $(SRCDIR)/main.c
@@ -25,6 +25,9 @@ client.o: $(SRCDIR)/client.c
 
 server.o: $(SRCDIR)/server.c
 	$(CC) $(CFLAGS) $(SRCDIR)/server.c
+
+collisionDetection.o: $(SRCDIR)/collisionDetection.c
+	gcc -c $(SRCDIR)/collisionDetection.c
 
 clean:
 	rm *.exe

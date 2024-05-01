@@ -44,9 +44,6 @@ void destroyFlag(Flag* Flag)
 }
 
 
-
-
-
 // Keeping this function commented in case we need it/something similar to it - Konrad
 void moveFlag(SDL_Rect *flagRect, int player1X, int player1Y, int player2X, int player2Y, int closeDistanceThreshold, int flagSpeed) {
     int distToPlayer1 = sqrt(pow(player1X - flagRect->x, 2) + pow(player1Y - flagRect->y, 2));

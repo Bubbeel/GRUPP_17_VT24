@@ -1,6 +1,8 @@
 #ifndef GAME_H
 #define GAME_H
 
+//UNDER CONSTRUCTION TO BE IMPLEMENTED IN THE FUTURE
+
 #include <SDL2/SDL.h>
 
 #define WINDOW_WIDTH 1408

@@ -1,5 +1,3 @@
-// gridMap.c
-
 #include <stdio.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -59,7 +57,7 @@ SDL_Texture* loadGridMap(SDL_Renderer *renderer)
     {
         printf("Error: %s\n", IMG_GetError());
     }
-    printf("Surface loaded \n");
+    //printf("Surface loaded \n");
 
     SDL_Texture* pTextureTest = SDL_CreateTextureFromSurface(renderer, pSurfaceTest);
     SDL_FreeSurface(pSurfaceTest);
@@ -67,7 +65,7 @@ SDL_Texture* loadGridMap(SDL_Renderer *renderer)
     {   
         printf("Error: %s\n", SDL_GetError());
     }
-    printf("Texture loaded \n");
+    //printf("Texture loaded \n");
 
     return pTextureTest;
 }
@@ -100,8 +98,10 @@ void renderGridMap(SDL_Renderer *renderer, GridMap *map, SDL_Texture* texture)
     }
 }
 
-// WIP!!! Need to figure out how to check position under player
-// void positionOnGrid()
-// {
-//     printf("TileX: %d, TileY: %d", map->cells[]);
-// }
+//Checks the position under player
+void getPlayerGridPosition(int playerX, int playerY, int* gridX, int* gridY) 
+{
+    *gridX = (playerX + CELL_SIZE/2) / CELL_SIZE;
+    *gridY = (playerY + CELL_SIZE/2) / CELL_SIZE;
+    //printf("Player position X: %d, Player position Y: %d\n", *gridX, *gridY);
+}

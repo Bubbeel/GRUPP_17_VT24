@@ -1,5 +1,5 @@
 
-//UNDER CONSTRUCTION!! DO NOT USE!!
+//UNDER CONSTRUCTION TO BE IMPLEMENTED IN THE FUTURE
 #include "game.h"
 #include "../objects/player.h"
 #include "../objects/gridmap.h"
