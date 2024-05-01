@@ -1,49 +1,70 @@
 #include <stdio.h>
 #include <SDL2/SDL_net.h>
+#include "../objects/server.h"
 
 #define PORT 3000
 
-int main() {
-    TCPsocket serverSocket;
+Server createServer();
+int acceptClientConnections(Server *pServer);
+int sendMessageToClient(TCPsocket clientSocket);
+//void sendGameData();
+
+Server createServer() {
     IPaddress ip;
-    TCPsocket clientSocket;
+    Server server;
 
-    //initialize sdl_net
-    SDLNet_Init();  
-
-    //resolve the host name and port number into an IPaddress type
     if (SDLNet_ResolveHost(&ip, NULL, PORT) == -1) {
         fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
-        SDLNet_Quit();
-        return 1;
+        server.serverSocket=NULL;
+        return server;
     }
 
-    //create a tcp-socket for server
-    serverSocket = SDLNet_TCP_Open(&ip);
-    if (!serverSocket) {
+    server.serverSocket = SDLNet_TCP_Open(&ip);
+    if (!server.serverSocket) {
         fprintf(stderr, "SDLNet_TCP_Open: %s\n", SDLNet_GetError());
-        SDLNet_Quit();
-        return 1;
+        return server;
     }
 
-    //listen on incoming connections from client
+    return server;
+}
+
+int acceptClientConnections(Server *pServer) {
+    TCPsocket clientSocket;
+    const char *message = "You are connected";
+
     while (1) {
-        clientSocket = SDLNet_TCP_Accept(serverSocket);
+        clientSocket = SDLNet_TCP_Accept(pServer->serverSocket);
         if (clientSocket) {
             printf("Client connected!\n");
 
-            //confirmation message to client
-            const char* message = "You are connected";
-            SDLNet_TCP_Send(clientSocket, message, strlen(message)+1);
+            // Send confirmation message to client
+            if (sendMessageToClient(clientSocket) != 0) {
+                SDLNet_TCP_Close(clientSocket);
+                return 1;
+            }
 
-            //close socket for client
+            // Close socket for client
             SDLNet_TCP_Close(clientSocket);
         }
     }
 
-    //close serversocket and quit sdlnet
-    SDLNet_TCP_Close(serverSocket);
-    SDLNet_Quit();
+    return 0;
+}
+
+// Send a message to the connected client
+int sendMessageToClient(TCPsocket clientSocket) {
+    const char *message = "You are connected";
+    int len = strlen(message) + 1;
+
+    if (SDLNet_TCP_Send(clientSocket, message, len) < len) {
+        fprintf(stderr, "SDLNet_TCP_Send: %s\n", SDLNet_GetError());
+        return 1;
+    }
 
     return 0;
 }
+
+/*void sendGameData(){
+
+}
+*/

@@ -50,4 +50,6 @@ SDL_Texture* loadGridMap(SDL_Renderer *renderer);
 
 void renderGridMap(SDL_Renderer *renderer, GridMap* map, SDL_Texture* texture);
 
+void getPlayerGridPosition(int playerX, int playerY, int* gridX, int* gridY);
+
 #endif // gridmap_h

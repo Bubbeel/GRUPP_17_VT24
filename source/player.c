@@ -1,27 +1,28 @@
 #include "../objects/player.h"
 #include <SDL2/SDL_image.h>
 
+//I recommend putting speed as a value that we put in player.speed in this function, and not define it in main.c
+//In theory if we want we can technically put #define SPEED 100 in player.c, but not in main.c
 Player* createPlayer(SDL_Renderer* renderer, int speed) {
     Player* pPlayer = malloc(sizeof(Player));
     if (!pPlayer) {
         return NULL;
     }
 
-    SDL_Surface* pPlayerSurface = IMG_Load("resources/player1.png");
-    if (!pPlayerSurface) {
+    pPlayer->playerSurface = IMG_Load("resources/player1.png");
+    if (!pPlayer->playerSurface) {
         free(pPlayer);
         return NULL;
     }
 
-    pPlayer->pPlayerTexture = SDL_CreateTextureFromSurface(renderer, pPlayerSurface);
-    SDL_FreeSurface(pPlayerSurface);
+    pPlayer->pPlayerTexture = SDL_CreateTextureFromSurface(renderer, pPlayer->playerSurface);
+    SDL_FreeSurface(pPlayer->playerSurface);
     if (!pPlayer->pPlayerTexture) {
         free(pPlayer);
         return NULL;
     }
 
     SDL_QueryTexture(pPlayer->pPlayerTexture, NULL, NULL, &pPlayer->playerRect.w, &pPlayer->playerRect.h);
-
     pPlayer->playerRect.w /= 20;
     pPlayer->playerRect.h /= 20;
     pPlayer->playerX = pPlayer->playerRect.w;
@@ -33,7 +34,7 @@ Player* createPlayer(SDL_Renderer* renderer, int speed) {
     return pPlayer;
 }
 
-void handlePlayerInput(SDL_Rect *playerRect, float *playerX, float *playerY, float *playerVelocityX, float *playerVelocityY, int up, int down, int left, int right, int windowWidth, int windowHeight, int playerRectWidth, int playerRectHeight, int speed) {
+void handlePlayerInput(SDL_Rect *playerRect, int *playerX, int *playerY, int *playerVelocityX, int *playerVelocityY, int up, int down, int left, int right, int windowWidth, int windowHeight, int playerRectWidth, int playerRectHeight, int speed) {
     *playerVelocityX = *playerVelocityY = 0;
     if (up && !down) *playerVelocityY = -speed;
     if (down && !up) *playerVelocityY = speed;
@@ -57,4 +58,3 @@ void destroyPlayer(Player* player) {
     SDL_DestroyTexture(player->pPlayerTexture);
     free(player);
 }
-

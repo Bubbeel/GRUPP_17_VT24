@@ -1,22 +1,25 @@
+#ifndef CLIENT_H
+#define CLIENT_H
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
 #include <SDL2/SDL_ttf.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include "definitions.h"
+#include <stdio.h>
+
+typedef struct {
+    IPaddress ip;
+    TCPsocket clientSocket;
+	UDPpacket *pPacket;
+    int clientId;
+}Client;
 
 //TCP
-
-int connectToServer(Game *pGame);
-int initTCPConnection(Game *pGame);
-void checkTCP(Game *pGame);
-PlayerNet *createClient(char *serverIP, int port, int id, int x, int y);
-void *scanForGamesOnLocalNetwork(void *arg);
+Client createClient();
+int connectToServer(Client *pClient);
+void closeClient(Client *pClient);
 
 //UDP
 
-void sendData(Game *pGame);
-void getPlayerData(Game *pGame);
-
+//void sendData(GameObject *pGameObject);
+int receiveFromServer(Client *pClient);
 
 #endif
