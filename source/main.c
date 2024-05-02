@@ -11,6 +11,9 @@
 
 
 #define SPEED 100
+#define LEVEL_WIDTH 2816
+#define LEVEL_HEIGTH 1600
+
 #define WINDOW_WIDTH 1408
 #define WINDOW_HEIGHT 800
 
@@ -77,9 +80,9 @@ int main(int argc, char** argv) {
     //
 
     //create GridMap obj and initialize GridMap
-    GridMap map;
+    GridMap* map = createGridMap();
     //CHECK THE FILE TO MAKE SURE EVERYTHING IS OKAY
-    loadMapFromFile("resources/map.txt", &map);
+    loadMapFromFile("resources/map.txt", map);
     SDL_Texture* gridTexture;
     gridTexture = loadGridMap(pRenderer);
 
@@ -199,7 +202,7 @@ int main(int argc, char** argv) {
         SDL_RenderClear(pRenderer);
 
     // Render Grid Map
-    renderGridMap(pRenderer, &map, gridTexture);
+    renderGridMap(pRenderer, map, gridTexture);
 
     
     // Collision Check with the flag
@@ -236,6 +239,7 @@ int main(int argc, char** argv) {
 }
     destroyPlayer(pPlayer);
     destroyFlag(flag);
+    destroyGridMap(map);
     SDL_DestroyTexture(pPlayer->pPlayerTexture);
     SDL_DestroyTexture(pTexture2);
     SDL_DestroyTexture(flag->flagTexture);

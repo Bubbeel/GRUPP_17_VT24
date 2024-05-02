@@ -3,6 +3,16 @@
 #include <SDL2/SDL_image.h>
 #include "gridMap.h"
 
+GridMap* createGridMap()
+{
+    GridMap* gridMap = malloc(sizeof(GridMap));
+    if(!gridMap)
+    {
+        return NULL;
+    }
+    return gridMap;
+}
+
 // Function to read map design from a textfile and initialize the GridMap
 void loadMapFromFile(const char* filename, GridMap* map)
 {
@@ -24,6 +34,8 @@ void loadMapFromFile(const char* filename, GridMap* map)
                 fclose(file);
                 return;
             }
+            //printf("Cell Y: %d, Cell X: %d\n", y, x);
+            //printf("Char: %c\n", cellType);
             switch(cellType)
             {
                 case 'E':
@@ -78,11 +90,11 @@ void renderGridMap(SDL_Renderer *renderer, GridMap *map, SDL_Texture* texture)
             SDL_Rect cellRect = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
             switch (map->cells[y][x].type) {
                 case EMPTY:
-                    SDL_SetRenderDrawColor(renderer, 0, 153, 0, 255); //leaving this if color is needed instead
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); //leaving this if color is needed instead
                     //SDL_RenderCopy(renderer, texture, NULL, &cellRect); //for rendering sprite
                     break;
                 case OBSTACLE:
-                    SDL_SetRenderDrawColor(renderer, 0, 204, 204, 255); //leaving this if color is needed instead
+                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); //leaving this if color is needed instead
                     //SDL_RenderCopy(renderer, texture, NULL, &cellRect); //for rendering sprite
                     break;
                 case FLAG:
@@ -104,4 +116,9 @@ void getPlayerGridPosition(int playerX, int playerY, int* gridX, int* gridY)
     *gridX = (playerX + CELL_SIZE/2) / CELL_SIZE;
     *gridY = (playerY + CELL_SIZE/2) / CELL_SIZE;
     //printf("Player position X: %d, Player position Y: %d\n", *gridX, *gridY);
+}
+
+void destroyGridMap(GridMap* gridMap) 
+{
+    free(gridMap);
 }

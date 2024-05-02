@@ -11,10 +11,12 @@
 //This is !important! because those parameters decide how much of the textfile for map is going to be read
 //If those values become bigger than what is written in the textfile then there will be a mess with the rendering
 //and a lot of black boxes will appear instead
+//Tested and player.png should be 640x640 pixels to be fit into a squre of cell_size 32, but gameplay-wise 
+//I think its better to have 600x600 or less - Konrad 
 
 #define CELL_SIZE 32
 #define GRID_WIDTH 44
-#define GRID_HEIGHT 25
+#define GRID_HEIGHT 32
 
 // Types of data that can be stored in each grid cell
 //Feel free to add and remove types if you need, but dont forget to assign them functionality in gridMap.c
@@ -43,13 +45,11 @@ typedef struct
     GridCell cells[GRID_HEIGHT][GRID_WIDTH]; // 2D array of grid cells
 } GridMap;
 
-
+GridMap* createGridMap();
 void loadMapFromFile(const char* filename, GridMap* map);
-
 SDL_Texture* loadGridMap(SDL_Renderer *renderer);
-
 void renderGridMap(SDL_Renderer *renderer, GridMap* map, SDL_Texture* texture);
-
 void getPlayerGridPosition(int playerX, int playerY, int* gridX, int* gridY);
+void destroyGridMap(GridMap* gridMap);
 
 #endif // gridmap_h

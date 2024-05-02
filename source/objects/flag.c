@@ -4,28 +4,28 @@
 
 Flag* createFlag(SDL_Renderer* renderer) 
 {
-    Flag* Flag = malloc(sizeof(Flag));
-    if (!Flag) 
+    Flag* flag = malloc(sizeof(Flag));
+    if (!flag) 
     {
         return NULL;
     }
 
-    Flag->flagSurface = IMG_Load("resources/flag.png");
-    if (!Flag->flagSurface) {
-        free(Flag);
+    flag->flagSurface = IMG_Load("resources/flag.png");
+    if (!flag->flagSurface) {
+        free(flag);
         return NULL;
     }
 
-    Flag->flagTexture = SDL_CreateTextureFromSurface(renderer, Flag->flagSurface);
-    SDL_FreeSurface(Flag->flagSurface);
-    if (!Flag->flagTexture) {
-        free(Flag);
+    flag->flagTexture = SDL_CreateTextureFromSurface(renderer, flag->flagSurface);
+    SDL_FreeSurface(flag->flagSurface);
+    if (!flag->flagTexture) {
+        free(flag);
         return NULL;
     }
 
-    SDL_QueryTexture(Flag->flagTexture, NULL, NULL, &Flag->flagRect.w, &Flag->flagRect.h);
+    SDL_QueryTexture(flag->flagTexture, NULL, NULL, &flag->flagRect.w, &flag->flagRect.h);
 
-    return Flag;
+    return flag;
 }
 
 //Doesn't work currently, don't know why
@@ -36,7 +36,7 @@ void flagAnimation(SDL_Renderer* renderer, Flag* flag)
     SDL_RenderCopy(renderer, flag->flagTexture, &srcRect, &flag->flagRect);
     flag->flagFrames = (flag->flagFrames + 1) % 5;
 }
-
+//
 void destroyFlag(Flag* Flag) 
 {
     SDL_DestroyTexture(Flag->flagTexture);
