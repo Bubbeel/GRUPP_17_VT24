@@ -10,9 +10,10 @@
 #include "collisionDetection.h"
 
 
-#define SPEED 100
+// Player Speed is now in the player.c file
+
 #define LEVEL_WIDTH 2816
-#define LEVEL_HEIGTH 1600
+#define LEVEL_HEIGHT 1600
 
 #define WINDOW_WIDTH 1408
 #define WINDOW_HEIGHT 800
@@ -54,7 +55,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    Player* pPlayer = createPlayer(pRenderer, SPEED);
+    Player* pPlayer = createPlayer(pRenderer);
     if (!pPlayer) {
         printf("Failed to create player, Error: %s\n", SDL_GetError());
         SDL_DestroyRenderer(pRenderer);
@@ -76,7 +77,8 @@ int main(int argc, char** argv) {
     SDL_Surface* pSurface2 = IMG_Load("resources/Ship.png");
 
     //temp data storage, if you put anything here, please try to keep all the data in their specific files if possible
-
+    int* tempX;
+    int* tempY;
     //
 
     //create GridMap obj and initialize GridMap
@@ -121,6 +123,8 @@ int main(int argc, char** argv) {
     flag->flagRect.w /= 5;
     flag->flagRect.x = WINDOW_WIDTH / 2;
     flag->flagRect.y = WINDOW_HEIGHT / 2;
+    flag->flagX = flag->flagRect.x;
+    flag->flagX = flag->flagRect.y;
 
     int player1VelocityX = 0;
     int player1VelocityY = 0;
@@ -212,24 +216,22 @@ int main(int argc, char** argv) {
         flag->flagRect.y = pPlayer->playerY;
     }
 
-    // Update flag animation frame, need this in flag.c
-    // SDL_Rect srcRect = { flagFrame * flag->flagRect.w, 0, flag->flagRect.w, flag->flagRect.h };
-    // SDL_RenderCopy(pRenderer, flag->flagTexture, &srcRect, &flag->flagRect);
-    // flagFrame = (flagFrame + 1) % 5;
     flagAnimation(pRenderer, flag);
 
-    // Handle player input and movement for player 1
-    handlePlayerInput(&pPlayer->playerRect, &pPlayer->playerX, &pPlayer->playerY, &pPlayer->playervelocityX, &pPlayer->playervelocityY, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT, pPlayer->playerRect.w, pPlayer->playerRect.h, SPEED);
+    // Handle player input and movement for player 1 
+    handlePlayerInput(pPlayer, up1, down1, left1, right1, LEVEL_WIDTH, LEVEL_HEIGHT);
 
     // Handle player input and movement for player 2
-    handlePlayerInput(&playerRect2, &player2X, &player2Y, &player2VelocityX, &player2VelocityY, up2, down2, left2, right2, WINDOW_WIDTH, WINDOW_HEIGHT, playerRect2.w, playerRect2.h, SPEED);
+    //handlePlayerInput(&playerRect2, &player2X, &player2Y, &player2VelocityX, &player2VelocityY, up2, down2, left2, right2, LEVEL_WIDTH, LEVEL_HEIGHT, playerRect2.w, playerRect2.h, SPEED);
 
     // Render players
     renderPlayer(pPlayer,pRenderer);
     SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
 
+    //printf("FlagX: %d, FlagY: %d\n", flag->flagX, flag->flagY);
     // Probably not needed here, but left it just in case I forget to use it :) - Konrad
-    getPlayerGridPosition(pPlayer->playerX, pPlayer->playerY, &pPlayer->playerGridX, &pPlayer->playerGridY);
+    //getPlayerGridPosition(pPlayer->playerX, pPlayer->playerY, &pPlayer->playerGridX, &pPlayer->playerGridY);
+    //getPlayerGridPosition(flag->flagX, flag->flagY, tempX, tempY);
 
     // Present renderer
     SDL_RenderPresent(pRenderer);

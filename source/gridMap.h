@@ -15,8 +15,8 @@
 //I think its better to have 600x600 or less - Konrad 
 
 #define CELL_SIZE 32
-#define GRID_WIDTH 44
-#define GRID_HEIGHT 32
+#define GRID_WIDTH 88
+#define GRID_HEIGHT 66
 
 // Types of data that can be stored in each grid cell
 //Feel free to add and remove types if you need, but dont forget to assign them functionality in gridMap.c

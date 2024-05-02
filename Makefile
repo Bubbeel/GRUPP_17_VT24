@@ -18,7 +18,7 @@ player.o: $(SRCDIR)/objects/player.c
 flag.o: $(SRCDIR)/objects/flag.c
 	$(CC) $(CFLAGS) $(SRCDIR)/objects/flag.c
 
-gridMap.o: $(SRCDIR)/gridMap.c
+gridMap.o: $(SRCDIR)/gridMap.c $(SRCDIR)/gridMap.h
 	gcc -c $(SRCDIR)/gridMap.c
 
 collisionDetection.o: $(SRCDIR)/collisionDetection.c

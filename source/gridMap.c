@@ -34,8 +34,6 @@ void loadMapFromFile(const char* filename, GridMap* map)
                 fclose(file);
                 return;
             }
-            //printf("Cell Y: %d, Cell X: %d\n", y, x);
-            //printf("Char: %c\n", cellType);
             switch(cellType)
             {
                 case 'E':
