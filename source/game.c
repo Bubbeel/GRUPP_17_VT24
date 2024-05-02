@@ -1,6 +1,6 @@
 
 //UNDER CONSTRUCTION TO BE IMPLEMENTED IN THE FUTURE
-#include "game.h"
+#include "../objects/game.h"
 #include "../objects/player.h"
 #include "../objects/gridmap.h"
 

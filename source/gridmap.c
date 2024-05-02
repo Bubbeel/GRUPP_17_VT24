@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include "gridMap.h"
+#include "../objects/gridmap.h"
 
 // Function to read map design from a textfile and initialize the GridMap
 void loadMapFromFile(const char* filename, GridMap* map)

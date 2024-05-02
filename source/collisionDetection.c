@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include "collisionDetection.h"
+#include "../objects/collisionDetection.h"
 
 int checkCollision(SDL_Rect a, SDL_Rect b)
 {
