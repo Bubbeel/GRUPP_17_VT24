@@ -11,7 +11,7 @@
 #include "../objects/server.h"
 #include "../objects/client.h"
 #include "../objects/collisionDetection.h"
-
+#include "../objects/menu.h" // Include the menu header file
 
 #define SPEED 100
 #define WINDOW_WIDTH 1408
@@ -135,6 +135,13 @@ int main(int argc, char **argv)
         }
     }
 
+    // Display menu and handle user choice
+    int menuChoice = displayMenu(pWindow, pRenderer);
+    if (menuChoice == 2) // If user chooses to quit from the menu
+    {
+        closeWindow = true;
+    }
+
     // Main game loop
     while (!closeWindow)
     {
@@ -142,7 +149,6 @@ int main(int argc, char **argv)
         handleEvents(&closeWindow, up1, down1, left1, right1, up2, down2, left2, right2);
         handlePlayerInput(&pPlayer->playerRect, &pPlayer->playerX, &pPlayer->playerY, &pPlayer->playervelocityX, &pPlayer->playervelocityY, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT, pPlayer->playerRect.w, pPlayer->playerRect.h, SPEED);
         handlePlayerInput(&playerRect2, &player2X, &player2Y, &player2VelocityX, &player2VelocityY, up2, down2, left2, right2, WINDOW_WIDTH, WINDOW_HEIGHT, playerRect2.w, playerRect2.h, SPEED);
-
 
         // Update game state
         updateGame(pPlayer, &player2X, &player2Y, &flagRect);
