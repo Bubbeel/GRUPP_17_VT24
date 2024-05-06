@@ -35,6 +35,7 @@ typedef enum
 // Defines the structure to represent a single cell in the grid
 typedef struct 
 {
+    //int cellSize;
     CellType type;
     // Add additional fields if needed
 } GridCell;
@@ -48,6 +49,7 @@ typedef struct
 GridMap* createGridMap();
 void loadMapFromFile(const char* filename, GridMap* map);
 SDL_Texture* loadGridMap(SDL_Renderer *renderer);
+void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, int playerX, int playerY, int screenWidth, int screenHeight);
 void renderGridMap(SDL_Renderer *renderer, GridMap* map, SDL_Texture* texture);
 void getPlayerGridPosition(int playerX, int playerY, int* gridX, int* gridY);
 void destroyGridMap(GridMap* gridMap);

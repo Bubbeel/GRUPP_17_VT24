@@ -52,7 +52,7 @@ void handlePlayerInput(Player* player, int up, int down, int left, int right, in
     }
     player->playerRect.x = player->playerX;
     player->playerRect.y = player->playerY;
-    printf("PX: %d, PY: %d, level width: %d\n", player->playerX, player->playerY, levelWidth);
+    printf("PX: %d, PY %d\n", player->playerX, player->playerY);
 }
 
 void renderPlayer(Player* player, SDL_Renderer* renderer) {

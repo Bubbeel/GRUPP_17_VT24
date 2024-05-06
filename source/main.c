@@ -73,6 +73,9 @@ int main(int argc, char** argv) {
         SDL_Quit();
         return 1;
     }
+
+    SDL_Rect camera = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+
     //background data
     SDL_Surface* pSurface2 = IMG_Load("resources/Ship.png");
 
@@ -203,10 +206,11 @@ int main(int argc, char** argv) {
             }
         }
 
-        SDL_RenderClear(pRenderer);
+    SDL_RenderClear(pRenderer);
 
     // Render Grid Map
-    renderGridMap(pRenderer, map, gridTexture);
+    //renderGridMap(pRenderer, map, gridTexture);
+    renderVisibleMap(pRenderer, map, pPlayer->playerX, pPlayer->playerY, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     
     // Collision Check with the flag
@@ -227,6 +231,25 @@ int main(int argc, char** argv) {
     // Render players
     renderPlayer(pPlayer,pRenderer);
     SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
+
+    camera.x = (pPlayer->playerX + pPlayer->playerRect.w/2) - WINDOW_WIDTH/2;
+    camera.y = (pPlayer->playerY + pPlayer->playerRect.h/2) - WINDOW_WIDTH/2;
+    if( camera.x < 0 )
+    { 
+       camera.x = 0;
+    }
+    if( camera.y < 0 )
+    {
+        camera.y = 0;
+    }
+    if( camera.x > LEVEL_WIDTH - camera.w )
+    {
+        camera.x = LEVEL_WIDTH - camera.w;
+    }
+    if( camera.y > LEVEL_HEIGHT - camera.h )
+    {
+        camera.y = LEVEL_HEIGHT - camera.h;
+    }
 
     //printf("FlagX: %d, FlagY: %d\n", flag->flagX, flag->flagY);
     // Probably not needed here, but left it just in case I forget to use it :) - Konrad

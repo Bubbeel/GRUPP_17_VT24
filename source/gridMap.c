@@ -80,33 +80,89 @@ SDL_Texture* loadGridMap(SDL_Renderer *renderer)
     return pTextureTest;
 }
 
-//Renders grid map either with pure colors or sprites, check comments in the definiton of the function
-void renderGridMap(SDL_Renderer *renderer, GridMap *map, SDL_Texture* texture) 
-{
-    for (int y = 0; y < GRID_HEIGHT; y++) {
-        for (int x = 0; x < GRID_WIDTH; x++) {
-            SDL_Rect cellRect = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
+
+// Function to render the portion of the map visible on the screen based on the player's position
+void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, int playerX, int playerY, int screenWidth, int screenHeight) {
+    // Calculate the top-left corner of the visible area based on the player's position
+    int topLeftX = playerX - (screenWidth / 2);
+    int topLeftY = playerY - (screenHeight / 2);
+
+    // Ensure the top-left corner is within the bounds of the map
+    if (topLeftX < 0) {
+        topLeftX = 0;
+    }
+    if (topLeftY < 0) {
+        topLeftY = 0;
+    }
+
+    // Calculate the bottom-right corner of the visible area
+    int bottomRightX = topLeftX + screenWidth;
+    int bottomRightY = topLeftY + screenHeight;
+
+    // Ensure the bottom-right corner is within the bounds of the map
+    if (bottomRightX > GRID_WIDTH) {
+        bottomRightX = GRID_WIDTH;
+    }
+    if (bottomRightY > GRID_HEIGHT) {
+        bottomRightY = GRID_HEIGHT;
+    }
+
+    // Render only the portion of the map that is visible on the screen
+    for (int y = topLeftY; y < bottomRightY; y++) {
+        for (int x = topLeftX; x < bottomRightX; x++) {
+            // Calculate the position of the cell on the screen
+            int screenX = (x - topLeftX) * CELL_SIZE;
+            int screenY = (y - topLeftY) * CELL_SIZE;
+
+            // Render the cell at the calculated screen position
+            SDL_Rect cellRect = {screenX, screenY, CELL_SIZE, CELL_SIZE};
             switch (map->cells[y][x].type) {
                 case EMPTY:
-                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); //leaving this if color is needed instead
-                    //SDL_RenderCopy(renderer, texture, NULL, &cellRect); //for rendering sprite
+                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // Render empty cell as white
                     break;
                 case OBSTACLE:
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); //leaving this if color is needed instead
-                    //SDL_RenderCopy(renderer, texture, NULL, &cellRect); //for rendering sprite
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Render obstacle cell as black
                     break;
                 case FLAG:
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 0 ,255); //leaving this if color is needed instead
+                    SDL_SetRenderDrawColor(renderer, 255, 255, 0 ,255); // Render flag cell as yellow
                     break;
                 default:
-                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); //if there are errors, there will be black squares
+                    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); //if there are errors, there will be rg squares
                     break;
                 // Add more cases for other cell types
             }
-            SDL_RenderFillRect(renderer, &cellRect); //comment or delete if not using SDL_SetRenderDrawColor
+            SDL_RenderFillRect(renderer, &cellRect);
         }
     }
 }
+
+//Renders grid map either with pure colors or sprites, check comments in the definiton of the function
+// void renderGridMap(SDL_Renderer *renderer, GridMap *map, SDL_Texture* texture) 
+// {
+//     for (int y = 0; y < GRID_HEIGHT; y++) {
+//         for (int x = 0; x < GRID_WIDTH; x++) {
+//             SDL_Rect cellRect = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
+//             switch (map->cells[y][x].type) {
+//                 case EMPTY:
+//                     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); //leaving this if color is needed instead
+//                     //SDL_RenderCopy(renderer, texture, NULL, &cellRect); //for rendering sprite
+//                     break;
+//                 case OBSTACLE:
+//                     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); //leaving this if color is needed instead
+//                     //SDL_RenderCopy(renderer, texture, NULL, &cellRect); //for rendering sprite
+//                     break;
+//                 case FLAG:
+//                     SDL_SetRenderDrawColor(renderer, 255, 255, 0 ,255); //leaving this if color is needed instead
+//                     break;
+//                 default:
+//                     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); //if there are errors, there will be black squares
+//                     break;
+//                 // Add more cases for other cell types
+//             }
+//             SDL_RenderFillRect(renderer, &cellRect); //comment or delete if not using SDL_SetRenderDrawColor
+//         }
+//     }
+// }
 
 //Checks the position under player
 void getPlayerGridPosition(int playerX, int playerY, int* gridX, int* gridY) 
