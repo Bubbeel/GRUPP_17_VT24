@@ -11,8 +11,8 @@
 #include "../objects/server.h"
 #include "../objects/client.h"
 #include "../objects/collisionDetection.h"
+#include "../objects/menu.h"
 #include "../objects/common.h"
-
 
 #define SPEED 100
 #define WINDOW_WIDTH 1408
@@ -23,6 +23,14 @@
 
 #define CLOSE_DISTANCE_THRESHOLD 10
 #define FLAG_SPEED 2
+
+typedef struct
+{
+    SDL_Texture* texture;
+    SDL_Rect rect;
+    SDL_Surface surface;
+    char tag;
+} GameObject;
 
 bool initSDL(SDL_Window **pWindow, SDL_Renderer **pRenderer);
 void closeSDL(SDL_Window *pWindow, SDL_Renderer *pRenderer);
@@ -131,6 +139,13 @@ int main(int argc, char **argv)
         }
     }
 
+    // Display menu and handle user choice
+    int menuChoice = displayMenu(pWindow, pRenderer);
+    if (menuChoice == 2) // If user chooses to quit from the menu
+    {
+        closeWindow = true;
+    }
+
     // Main game loop
     while (!closeWindow)
     {
@@ -139,6 +154,7 @@ int main(int argc, char **argv)
         // Update game state
         updateGame(pRenderer, pPlayer,  pPlayerPackage, &flagRect, pClient);
         handlePlayerInput(&pPlayer->playerRect, &pPlayer->playerX, &pPlayer->playerY, &pPlayer->playervelocityX, &pPlayer->playervelocityY, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT, pPlayer->playerRect.w, pPlayer->playerRect.h, SPEED);
+
         // Render the game
         render(pRenderer, &map, gridTexture, pPlayer,pTexture1, flagRect, pTextureFlag, flag, pClient, pServer);
         if (isServer) {
@@ -291,7 +307,7 @@ void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Pla
     // Render grid, players, flag, etc.
     // You need to implement this function according to your rendering needs
     // For demonstration purposes, here's a simple rendering logic:
-
+    int flagFrame=0;
     // Clear renderer
     SDL_RenderClear(pRenderer);
 
@@ -302,10 +318,13 @@ void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Pla
     renderPlayer(pPlayer, pRenderer);
 
     renderOtherClients(pRenderer, pClient,*pServer->pNrOfClients, pTexture1, pServer, pPlayer);
-
+     SDL_Rect srcRect = {flagFrame * flagRect.w, 0, flagRect.w, flagRect.h};
     // Render flag
     SDL_RenderCopy(pRenderer, pTextureFlag, NULL, &flag->flagRect);
 
+    moveFlag(&flagRect, pPlayer->playerX, pPlayer->playerY, CLOSE_DISTANCE_THRESHOLD, FLAG_SPEED);
+
+    flagFrame = (flagFrame + 1) % 5;
     // Present renderer
     SDL_RenderPresent(pRenderer);
 }
