@@ -29,8 +29,9 @@ void closeSDL(SDL_Window *pWindow, SDL_Renderer *pRenderer);
 bool loadResources(SDL_Renderer *pRenderer, SDL_Texture **pTexture1, SDL_Texture **pTextureFlag);
 void handleEvents(bool *closeWindow, bool *up1, bool *down1, bool *left1, bool *right1);
 void updateGame(SDL_Renderer* pRenderer, Player *pPlayer,PlayerPackage *pPlayerPackage, SDL_Rect *flagRect, Client *pClient);
-void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Player *pPlayer, SDL_Texture *pTexture1, SDL_Rect flagRect, SDL_Texture *pTextureFlag, Flag* flag, Client *pClient);
+void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Player *pPlayer, SDL_Texture *pTexture1, SDL_Rect flagRect, SDL_Texture *pTextureFlag, Flag* flag, Client *pClient, Server *pServer);
 void cleanup(Player *pPlayer, SDL_Texture *pTexture1, SDL_Texture *pTextureFlag, SDL_Texture *gridTexture);
+void renderOtherClients(SDL_Renderer* pRenderer, Client* clients, int numClients, SDL_Texture* clientTexture, Server *pServer, Player *pPlayer);
 
 int main(int argc, char **argv)
 {
@@ -111,6 +112,7 @@ int main(int argc, char **argv)
             return 1;
         }
         *pClient = *createClient();
+        pServer -> pNrOfClients++;
         if (connectToServer(pClient) != 0)
         {
             printf("Failed to connect to server\n");
@@ -138,7 +140,7 @@ int main(int argc, char **argv)
         updateGame(pRenderer, pPlayer,  pPlayerPackage, &flagRect, pClient);
         handlePlayerInput(&pPlayer->playerRect, &pPlayer->playerX, &pPlayer->playerY, &pPlayer->playervelocityX, &pPlayer->playervelocityY, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT, pPlayer->playerRect.w, pPlayer->playerRect.h, SPEED);
         // Render the game
-        render(pRenderer, &map, gridTexture, pPlayer,pTexture1, flagRect, pTextureFlag, flag, pClient);
+        render(pRenderer, &map, gridTexture, pPlayer,pTexture1, flagRect, pTextureFlag, flag, pClient, pServer);
         if (isServer) {
             listenForClientData(pServer, pClient, pPlayer); 
             sendGameData(pServer, pClient, pPlayer);
@@ -284,7 +286,7 @@ void updateGame(SDL_Renderer* pRenderer, Player *pPlayer,PlayerPackage *pPlayerP
 }
 
 // Rendering Function
-void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Player *pPlayer, SDL_Texture *pTexture1, SDL_Rect flagRect, SDL_Texture *pTextureFlag, Flag* flag, Client *pClient)
+void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Player *pPlayer, SDL_Texture *pTexture1, SDL_Rect flagRect, SDL_Texture *pTextureFlag, Flag* flag, Client *pClient, Server *pServer)
 {
     // Render grid, players, flag, etc.
     // You need to implement this function according to your rendering needs
@@ -298,6 +300,8 @@ void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Pla
 
     // Render player
     renderPlayer(pPlayer, pRenderer);
+
+    renderOtherClients(pRenderer, pClient,*pServer->pNrOfClients, pTexture1, pServer, pPlayer);
 
     // Render flag
     SDL_RenderCopy(pRenderer, pTextureFlag, NULL, &flag->flagRect);
@@ -313,4 +317,25 @@ void cleanup(Player *pPlayer, SDL_Texture *pTexture1, SDL_Texture *pTextureFlag,
     SDL_DestroyTexture(pTexture1);
     SDL_DestroyTexture(pTextureFlag);
     SDL_DestroyTexture(gridTexture);
+}
+
+void renderOtherClients(SDL_Renderer* pRenderer, Client* clients, int numClients, SDL_Texture* clientTexture, Server *pServer, Player *pPlayer) {
+    printf("pRenderer: %p\n", pRenderer);
+    printf("clients: %p\n", clients);
+    printf("numClients: %d\n", numClients);
+    printf("clientTexture: %p\n", clientTexture);
+    printf("pServer: %p\n", pServer);
+    printf("pPlayer: %p\n", pPlayer);
+
+    for (int i = 0; i < numClients; i++) {
+        printf("Rendering client %d\n", i);
+        Client* client = &clients[i];
+
+        SDL_Rect clientRect;
+        clientRect.x = pPlayer->playerX;
+        clientRect.y = pPlayer->playerY;
+        SDL_QueryTexture(clientTexture, NULL, NULL, &clientRect.w, &clientRect.h);
+
+        SDL_RenderCopy(pRenderer, clientTexture, NULL, &clientRect);
+    }
 }

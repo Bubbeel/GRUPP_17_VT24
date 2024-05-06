@@ -147,7 +147,7 @@ void sendGameData(Server *pServer, Client *pClient, Player *player){
     pPacket->len = sizeof(PlayerPackage);
 
     int channel = 0;
-    for(int i=0;i<pServer->nrOfClients;i++){
+    for(int i=0;i<*pServer->pNrOfClients;i++){
         if (SDLNet_UDP_Send(udpSocket, channel, pPacket) == 0) {
             fprintf(stderr, "SDLNet_UDP_Send: %s\n", SDLNet_GetError());
         }

@@ -9,7 +9,7 @@
 typedef struct {
     TCPsocket serverSocket;
 	UDPpacket *pPacket;
-    int nrOfClients;
+    int *pNrOfClients;
     Client clients[4];
 }Server;
 
