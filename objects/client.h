@@ -4,22 +4,24 @@
 #include <SDL2/SDL_net.h>
 #include <SDL2/SDL_ttf.h>
 #include <stdio.h>
+#include "../objects/player.h"
 
 typedef struct {
     IPaddress ip;
     TCPsocket clientSocket;
 	UDPpacket *pPacket;
+    UDPsocket udpSocket;
     int clientId;
 }Client;
 
 //TCP
-Client createClient();
+Client *createClient();
 int connectToServer(Client *pClient);
 void closeClient(Client *pClient);
 
 //UDP
 
-//void sendData(GameObject *pGameObject);
-int receiveFromServer(Client *pClient);
+void sendDataUDP(Client *pClient, Player *player);
+int receiveFromServer(Client *pClient, Player *player);
 
 #endif

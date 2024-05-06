@@ -1,7 +1,7 @@
 // gridMap.h
 
-#ifndef gridmap_h
-#define gridmap_h
+#ifndef gridMap_h
+#define gridMap_h
 
 // !!!IMPORTANT Define the size of the grid IMPORTANT!!!
 //Currently the sizes do not scale automatically to the window size, they are hardcoded

@@ -10,6 +10,7 @@ typedef struct {
     int playerX, playerY;
     int playervelocityX, playervelocityY;
     int playerGridX, playerGridY; //used for getPlayerPosition and is saved here!!
+    char direction;
     int speed;
 } Player;
 

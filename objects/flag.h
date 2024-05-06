@@ -16,6 +16,6 @@ Flag* createFlag(SDL_Renderer* renderer);
 void flagAnimation(SDL_Renderer* renderer, Flag* flag);
 void destroyFlag(Flag* Flag);
 
-void moveFlag(SDL_Rect *flagRect, int player1X, int player1Y, int player2X, int player2Y, int closeDistanceThreshold, int flagSpeed);
+void moveFlag(SDL_Rect *flagRect, int player1X, int player1Y, int closeDistanceThreshold, int flagSpeed);
 
 #endif /* FLAG_H */

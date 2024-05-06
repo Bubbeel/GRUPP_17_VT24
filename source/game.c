@@ -1,4 +1,4 @@
-
+/*
 //UNDER CONSTRUCTION TO BE IMPLEMENTED IN THE FUTURE
 #include "../objects/game.h"
 #include "../objects/player.h"
@@ -54,3 +54,4 @@ void render(Player *player1, SDL_Rect *player2Rect, SDL_Texture *texturePlayer1,
 void destroy(Player *player1, SDL_Texture *texturePlayer1, SDL_Texture *texturePlayer2, SDL_Renderer *renderer) {
     // release resources and textures
 }
+*/
