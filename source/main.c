@@ -32,6 +32,19 @@ typedef struct
     char tag;
 } GameObject;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Function prototypes
 bool initSDL(SDL_Window **pWindow, SDL_Renderer **pRenderer);
 void closeSDL(SDL_Window *pWindow, SDL_Renderer *pRenderer);
@@ -41,8 +54,12 @@ void updateGame(Player *pPlayer, int *player2X, int *player2Y, SDL_Rect *flagRec
 void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Player *pPlayer, int player2X, int player2Y, SDL_Texture *pTexture2, SDL_Rect flagRect, SDL_Texture *pTextureFlag, Flag* flag);
 void cleanup(Player *pPlayer, SDL_Texture *pTexture1, SDL_Texture *pTexture2, SDL_Texture *pTextureFlag, SDL_Texture *gridTexture);
 
+
+
+
 int main(int argc, char **argv)
 {
+
     SDL_Window *pWindow = NULL;
     SDL_Renderer *pRenderer = NULL;
     SDL_Texture *pTexture1 = NULL;
@@ -135,12 +152,13 @@ int main(int argc, char **argv)
         }
     }
 
-    // Display menu and handle user choice
-    int menuChoice = displayMenu(pWindow, pRenderer);
-    if (menuChoice == 2) // If user chooses to quit from the menu
-    {
-        closeWindow = true;
-    }
+
+
+
+
+
+
+
 
     // Main game loop
     while (!closeWindow)
@@ -166,6 +184,11 @@ int main(int argc, char **argv)
     return 0;
 }
 
+
+
+
+
+
 // Initialization Functions
 bool initSDL(SDL_Window **pWindow, SDL_Renderer **pRenderer)
 {
@@ -189,8 +212,22 @@ bool initSDL(SDL_Window **pWindow, SDL_Renderer **pRenderer)
         SDL_Quit();
         return false;
     }
+    if (SDLNet_Init() == -1)
+	{
+		printf("SDLNet_Init: %s\n", SDLNet_GetError());
+        SDL_DestroyRenderer(*pRenderer);
+        SDL_DestroyWindow(*pWindow);
+        SDL_Quit();
+		return false;
+	}
+
     return true;
 }
+
+
+
+
+
 
 void closeSDL(SDL_Window *pWindow, SDL_Renderer *pRenderer)
 {
@@ -198,6 +235,11 @@ void closeSDL(SDL_Window *pWindow, SDL_Renderer *pRenderer)
     SDL_DestroyWindow(pWindow);
     SDL_Quit();
 }
+
+
+
+
+
 
 bool loadResources(SDL_Renderer *pRenderer, SDL_Texture **pTexture1, SDL_Texture **pTexture2, SDL_Texture **pTextureFlag)
 {
@@ -222,6 +264,11 @@ bool loadResources(SDL_Renderer *pRenderer, SDL_Texture **pTexture1, SDL_Texture
     }
     return true;
 }
+
+
+
+
+
 
 // Event Handling Function
 void handleEvents(bool *closeWindow, bool up1, bool down1, bool left1, bool right1, bool up2, bool down2, bool left2, bool right2)
@@ -296,6 +343,9 @@ void handleEvents(bool *closeWindow, bool up1, bool down1, bool left1, bool righ
     }
 }
 
+
+
+
 // Game Logic Function under construction
 void updateGame(Player *pPlayer, int *player2X, int *player2Y, SDL_Rect *flagRect){
     // Update player and flag positions, handle collisions, etc.
@@ -316,6 +366,10 @@ void updateGame(Player *pPlayer, int *player2X, int *player2Y, SDL_Rect *flagRec
     // Update flag position (example)
     flagRect->x += 1; // Move flag to the right by 1 pixel each frame
 }
+
+
+
+
 
 // Rendering Function
 void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Player *pPlayer, int player2X, int player2Y, SDL_Texture *pTexture2, SDL_Rect flagRect, SDL_Texture *pTextureFlag, Flag* flag)
