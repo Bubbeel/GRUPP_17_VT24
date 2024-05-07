@@ -172,6 +172,7 @@ int main(int argc, char **argv)
 
 
 
+
 // Initialization Functions
 bool initSDL(SDL_Window **pWindow, SDL_Renderer **pRenderer)
 {
