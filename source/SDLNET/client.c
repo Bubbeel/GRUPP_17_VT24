@@ -1,3 +1,4 @@
+/*
 #include <stdio.h>
 #include <SDL2/SDL_net.h>
 #include "../objects/client.h"
@@ -59,3 +60,7 @@ void closeClient(Client *pClient){
 }
 
 //void sendData(GameObject *pGameObject);
+
+
+
+*/ 

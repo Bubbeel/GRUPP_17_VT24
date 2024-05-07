@@ -25,13 +25,17 @@ Flag* createFlag(SDL_Renderer* renderer)
 
     SDL_QueryTexture(Flag->flagTexture, NULL, NULL, &Flag->flagRect.w, &Flag->flagRect.h);
 
+    Flag->flagRect.w /= 5;
+    Flag->flagRect.x = WINDOW_WIDTH / 2;
+    Flag->flagRect.y = WINDOW_HEIGHT / 2;
+    Flag->flagFrames = 0;
+
     return Flag;
 }
 
 //Doesn't work currently, don't know why
 void flagAnimation(SDL_Renderer* renderer, Flag* flag)
 {
-    flag->flagFrames = 0;
     SDL_Rect srcRect = { flag->flagFrames * flag->flagRect.w, 0, flag->flagRect.w, flag->flagRect.h };
     SDL_RenderCopy(renderer, flag->flagTexture, &srcRect, &flag->flagRect);
     flag->flagFrames = (flag->flagFrames + 1) % 5;

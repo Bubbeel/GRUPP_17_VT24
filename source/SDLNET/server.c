@@ -1,3 +1,5 @@
+/*
+
 #include <stdio.h>
 #include <SDL2/SDL_net.h>
 #include "../objects/server.h"
@@ -67,4 +69,5 @@ int sendMessageToClient(TCPsocket clientSocket) {
 /*void sendGameData(){
 
 }
+
 */
