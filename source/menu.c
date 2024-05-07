@@ -2,7 +2,7 @@
 // Created by conne on 2024-04-29.
 //
 
-#include "menu.h"
+#include "../objects/menu.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>

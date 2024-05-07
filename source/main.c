@@ -5,6 +5,7 @@
 #include <SDL2/SDL_net.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+
 #include "../objects/player.h"
 #include "../objects/flag.h"
 #include "../objects/gridMap.h"
@@ -185,6 +186,7 @@ bool initSDL(SDL_Window **pWindow, SDL_Renderer **pRenderer)
         printf("Error: %s\n", SDL_GetError());
         return false;
     }
+
     *pWindow = SDL_CreateWindow("CTF Gaming", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     if (!(*pWindow))
     {
@@ -192,10 +194,20 @@ bool initSDL(SDL_Window **pWindow, SDL_Renderer **pRenderer)
         SDL_Quit();
         return false;
     }
+
     *pRenderer = SDL_CreateRenderer(*pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!(*pRenderer))
     {
         printf("Error: %s\n", SDL_GetError());
+        SDL_DestroyWindow(*pWindow);
+        SDL_Quit();
+        return false;
+    }
+
+    if (SDLNet_Init() == -1)
+    {
+        printf("SDLNet_Init: %s\n", SDLNet_GetError());
+        SDL_DestroyRenderer(*pRenderer);
         SDL_DestroyWindow(*pWindow);
         SDL_Quit();
         return false;
