@@ -9,7 +9,6 @@
 #include "gridMap.h"
 #include "collisionDetection.h"
 
-
 // Player Speed is now in the player.c file
 
 #define LEVEL_WIDTH 2816
@@ -32,6 +31,8 @@ typedef struct
     SDL_Surface surface;
     char tag;
 } GameObject;
+
+SDL_Rect camera = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
 
 
 int main(int argc, char** argv) {
@@ -74,8 +75,6 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    SDL_Rect camera = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
-
     //background data
     SDL_Surface* pSurface2 = IMG_Load("resources/Ship.png");
 
@@ -108,6 +107,8 @@ int main(int argc, char** argv) {
         SDL_Quit();
         return 1;
     }
+
+    //renderGridMap(pRenderer, map, gridTexture);
 
     SDL_Rect playerRect1;
     SDL_Rect playerRect2;
@@ -212,6 +213,25 @@ int main(int argc, char** argv) {
     //renderGridMap(pRenderer, map, gridTexture);
     renderVisibleMap(pRenderer, map, pPlayer->playerX, pPlayer->playerY, WINDOW_WIDTH, WINDOW_HEIGHT);
 
+    // camera.x = (pPlayer->playerX + pPlayer->playerRect.w/2) - WINDOW_WIDTH/2;
+    // camera.y = (pPlayer->playerY + pPlayer->playerRect.h/2) - WINDOW_HEIGHT/2;
+    // //printf("playervelx: %d , playervely: %d \n",pPlayer->playerVelocityX, pPlayer->playerVelocityY);
+    // if( camera.x < 0 )
+    // { 
+    //    camera.x = 0;
+    // }
+    // if( camera.y < 0 )
+    // {
+    //     camera.y = 0;
+    // }
+    // if( camera.x > WINDOW_WIDTH - camera.w )
+    // {
+    //     camera.x = WINDOW_WIDTH - camera.w;
+    // }
+    // if( camera.y > WINDOW_HEIGHT - camera.h )
+    // {
+    //     camera.y = WINDOW_HEIGHT - camera.h;
+    // }
     
     // Collision Check with the flag
     if (checkCollision(pPlayer->playerRect, flag->flagRect))
@@ -223,7 +243,7 @@ int main(int argc, char** argv) {
     flagAnimation(pRenderer, flag);
 
     // Handle player input and movement for player 1 
-    handlePlayerInput(pPlayer, up1, down1, left1, right1, LEVEL_WIDTH, LEVEL_HEIGHT);
+    handlePlayerInput(pPlayer, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     // Handle player input and movement for player 2
     //handlePlayerInput(&playerRect2, &player2X, &player2Y, &player2VelocityX, &player2VelocityY, up2, down2, left2, right2, LEVEL_WIDTH, LEVEL_HEIGHT, playerRect2.w, playerRect2.h, SPEED);
@@ -232,28 +252,11 @@ int main(int argc, char** argv) {
     renderPlayer(pPlayer,pRenderer);
     SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
 
-    camera.x = (pPlayer->playerX + pPlayer->playerRect.w/2) - WINDOW_WIDTH/2;
-    camera.y = (pPlayer->playerY + pPlayer->playerRect.h/2) - WINDOW_WIDTH/2;
-    if( camera.x < 0 )
-    { 
-       camera.x = 0;
-    }
-    if( camera.y < 0 )
-    {
-        camera.y = 0;
-    }
-    if( camera.x > LEVEL_WIDTH - camera.w )
-    {
-        camera.x = LEVEL_WIDTH - camera.w;
-    }
-    if( camera.y > LEVEL_HEIGHT - camera.h )
-    {
-        camera.y = LEVEL_HEIGHT - camera.h;
-    }
+
 
     //printf("FlagX: %d, FlagY: %d\n", flag->flagX, flag->flagY);
     // Probably not needed here, but left it just in case I forget to use it :) - Konrad
-    //getPlayerGridPosition(pPlayer->playerX, pPlayer->playerY, &pPlayer->playerGridX, &pPlayer->playerGridY);
+    getPlayerGridPosition(pPlayer->playerX, pPlayer->playerY, &pPlayer->playerGridX, &pPlayer->playerGridY, map);
     //getPlayerGridPosition(flag->flagX, flag->flagY, tempX, tempY);
 
     // Present renderer

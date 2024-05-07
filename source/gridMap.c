@@ -2,6 +2,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include "gridMap.h"
+#include "objects/player.h"
 
 GridMap* createGridMap()
 {
@@ -12,7 +13,7 @@ GridMap* createGridMap()
     }
     return gridMap;
 }
-
+//
 // Function to read map design from a textfile and initialize the GridMap
 void loadMapFromFile(const char* filename, GridMap* map)
 {
@@ -34,6 +35,10 @@ void loadMapFromFile(const char* filename, GridMap* map)
                 fclose(file);
                 return;
             }
+            map->cells[y][x].cellRect.x = x * CELL_SIZE;
+            map->cells[y][x].cellRect.y = y * CELL_SIZE;
+            map->cells[y][x].cellRect.w = CELL_SIZE;
+            map->cells[y][x].cellRect.h = CELL_SIZE;
             switch(cellType)
             {
                 case 'E':
@@ -81,6 +86,57 @@ SDL_Texture* loadGridMap(SDL_Renderer *renderer)
 }
 
 
+// void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, int playerX, int playerY, int screenWidth, int screenHeight) {
+//     // Calculate the top-left corner of the visible area based on the camera's position
+//     int cameraX = playerX - (screenWidth / 2);
+//     int cameraY = playerY - (screenHeight / 2);
+
+//     // Ensure the camera stays within the bounds of the map
+//     if (cameraX < 0) {
+//         cameraX = 0;
+//         //printf("CameraX: %d, PlayerX: %d\n", cameraX, playerX);
+//     }
+//     if (cameraY < 0) {
+//         cameraY = 0;
+//     }
+//     if (cameraX > GRID_WIDTH /*- screenWidth*/) {
+//         cameraX = GRID_WIDTH /*- screenWidth*/;
+//     }
+//     if (cameraY > GRID_HEIGHT /*- screenHeight*/) {
+//         cameraY = GRID_HEIGHT /*- screenHeight*/;
+//     }
+//     // Render only the portion of the map that is visible on the screen
+//     for (int y = cameraY; y < GRID_HEIGHT; y++) {
+//         for (int x = cameraX; x < GRID_WIDTH; x++) {
+//             // Calculate the position of the cell on the screen
+//             int screenX = (x - cameraX) * CELL_SIZE;
+//             int screenY = (y - cameraY) * CELL_SIZE;
+//             // Render the cell at the calculated screen position
+//             //SDL_Rect cellRect = {screenX, screenY, CELL_SIZE, CELL_SIZE};
+//             switch (map->cells[y][x].type) {
+//                 case EMPTY:
+//                     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // Render empty cell as white
+//                     break;
+//                 case OBSTACLE:
+//                     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Render obstacle cell as black
+//                     break;
+//                 case FLAG:
+//                     SDL_SetRenderDrawColor(renderer, 255, 255, 0 ,255); // Render flag cell as yellow
+//                     break;
+//                 default:
+//                     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // Default to white for unknown cell types
+//                     break;
+//             }
+//             // map->cells[y][x].cellRect.x = screenX;
+//             // map->cells[y][x].cellRect.y = screenY;
+//             // map->cells[y][x].cellRect.w = CELL_SIZE;
+//             // map->cells[y][x].cellRect.h = CELL_SIZE;
+//             //printf("ScreenX: %d, ScreenY: %d\n", screenX, screenY);
+//             SDL_RenderFillRect(renderer, &map->cells[y][x].cellRect); //comment or delete if not using SDL_SetRenderDrawColor
+//         }
+//     }
+// }
+
 // Function to render the portion of the map visible on the screen based on the player's position
 void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, int playerX, int playerY, int screenWidth, int screenHeight) {
     // Calculate the top-left corner of the visible area based on the player's position
@@ -95,9 +151,11 @@ void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, int playerX, int pla
         topLeftY = 0;
     }
 
+
     // Calculate the bottom-right corner of the visible area
     int bottomRightX = topLeftX + screenWidth;
     int bottomRightY = topLeftY + screenHeight;
+    printf("botrighttX: %d, botrightY; %d\n", bottomRightX, bottomRightY);
 
     // Ensure the bottom-right corner is within the bounds of the map
     if (bottomRightX > GRID_WIDTH) {
@@ -107,6 +165,8 @@ void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, int playerX, int pla
         bottomRightY = GRID_HEIGHT;
     }
 
+    //printf("bottomRightX: %d, bottomRightY: %d \n", bottomRightX, bottomRightY);
+
     // Render only the portion of the map that is visible on the screen
     for (int y = topLeftY; y < bottomRightY; y++) {
         for (int x = topLeftX; x < bottomRightX; x++) {
@@ -115,7 +175,7 @@ void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, int playerX, int pla
             int screenY = (y - topLeftY) * CELL_SIZE;
 
             // Render the cell at the calculated screen position
-            SDL_Rect cellRect = {screenX, screenY, CELL_SIZE, CELL_SIZE};
+            //SDL_Rect cellRect = {screenX, screenY, CELL_SIZE, CELL_SIZE};
             switch (map->cells[y][x].type) {
                 case EMPTY:
                     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // Render empty cell as white
@@ -131,45 +191,54 @@ void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, int playerX, int pla
                     break;
                 // Add more cases for other cell types
             }
-            SDL_RenderFillRect(renderer, &cellRect);
+            // map->cells[y][x].cellRect.x = screenX;
+            // map->cells[y][x].cellRect.y = screenY;
+            // map->cells[y][x].cellRect.w = CELL_SIZE;
+            // map->cells[y][x].cellRect.h = CELL_SIZE;
+            //printf("ScreenX: %d, ScreenY: %d\n", screenX, screenY);
+            SDL_RenderFillRect(renderer, &map->cells[y][x].cellRect);
         }
     }
 }
 
 //Renders grid map either with pure colors or sprites, check comments in the definiton of the function
-// void renderGridMap(SDL_Renderer *renderer, GridMap *map, SDL_Texture* texture) 
-// {
-//     for (int y = 0; y < GRID_HEIGHT; y++) {
-//         for (int x = 0; x < GRID_WIDTH; x++) {
-//             SDL_Rect cellRect = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
-//             switch (map->cells[y][x].type) {
-//                 case EMPTY:
-//                     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); //leaving this if color is needed instead
-//                     //SDL_RenderCopy(renderer, texture, NULL, &cellRect); //for rendering sprite
-//                     break;
-//                 case OBSTACLE:
-//                     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); //leaving this if color is needed instead
-//                     //SDL_RenderCopy(renderer, texture, NULL, &cellRect); //for rendering sprite
-//                     break;
-//                 case FLAG:
-//                     SDL_SetRenderDrawColor(renderer, 255, 255, 0 ,255); //leaving this if color is needed instead
-//                     break;
-//                 default:
-//                     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); //if there are errors, there will be black squares
-//                     break;
-//                 // Add more cases for other cell types
-//             }
-//             SDL_RenderFillRect(renderer, &cellRect); //comment or delete if not using SDL_SetRenderDrawColor
-//         }
-//     }
-// }
+void renderGridMap(SDL_Renderer *renderer, GridMap *map, SDL_Texture* texture) 
+{
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            switch (map->cells[y][x].type) {
+                case EMPTY:
+                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); //leaving this if color is needed instead
+                    //SDL_RenderCopy(renderer, texture, NULL, &cellRect); //for rendering sprite
+                    break;
+                case OBSTACLE:
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); //leaving this if color is needed instead
+                    //SDL_RenderCopy(renderer, texture, NULL, &cellRect); //for rendering sprite
+                    break;
+                case FLAG:
+                    SDL_SetRenderDrawColor(renderer, 255, 255, 0 ,255); //leaving this if color is needed instead
+                    break;
+                default:
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); //if there are errors, there will be black squares
+                    break;
+                // Add more cases for other cell types
+            }
+            map->cells[y][x].cellRect.x = x * CELL_SIZE;
+            map->cells[y][x].cellRect.y = y * CELL_SIZE;
+            map->cells[y][x].cellRect.w = CELL_SIZE;
+            map->cells[y][x].cellRect.h = CELL_SIZE;
+            //printf("ScreenX: %d, ScreenY: %d\n", screenX, screenY);
+            SDL_RenderFillRect(renderer, &map->cells[y][x].cellRect); //comment or delete if not using SDL_SetRenderDrawColor
+        }
+    }
+}
 
 //Checks the position under player
-void getPlayerGridPosition(int playerX, int playerY, int* gridX, int* gridY) 
+void getPlayerGridPosition(int playerX, int playerY, int* gridX, int* gridY, GridMap* map) 
 {
     *gridX = (playerX + CELL_SIZE/2) / CELL_SIZE;
     *gridY = (playerY + CELL_SIZE/2) / CELL_SIZE;
-    //printf("Player position X: %d, Player position Y: %d\n", *gridX, *gridY);
+    //printf("Player grid position X: %d, Player grid position Y: %d\n", map->cells[*gridX][*gridY].cellRect.x, map->cells[*gridX][*gridY].cellRect.y);
 }
 
 void destroyGridMap(GridMap* gridMap) 

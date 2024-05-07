@@ -2,6 +2,7 @@
 #include <SDL2/SDL_image.h>
 
 #define SPEED 300
+#define PLAYER_FRAME_RATE 60
 
 Player* createPlayer(SDL_Renderer* renderer) {
     Player* pPlayer = malloc(sizeof(Player));
@@ -34,7 +35,10 @@ Player* createPlayer(SDL_Renderer* renderer) {
     return pPlayer;
 }
 
-void handlePlayerInput(Player* player, int up, int down, int left, int right, int levelWidth, int levelHeight) {
+void handlePlayerInput(Player* player, int up, int down, int left, int right, int levelWidth, int levelHeight) 
+{
+    const double dt = 1.0 / PLAYER_FRAME_RATE; // Calculate delta time
+
     player->playerVelocityX = player->playerVelocityY = 0;
     if (up && !down) player->playerVelocityY = -(player->speed);
     if (down && !up) player->playerVelocityY = player->speed;
@@ -42,6 +46,7 @@ void handlePlayerInput(Player* player, int up, int down, int left, int right, in
     if (right && !left) player->playerVelocityX = player->speed;
     player->playerX += player->playerVelocityX / 60;
     player->playerY += player->playerVelocityY / 60;
+
     if ((player->playerX < 0) || (player->playerX + player->playerRect.w > levelWidth)) 
     {
         player->playerX -= (player->playerVelocityX / 60);
@@ -52,7 +57,7 @@ void handlePlayerInput(Player* player, int up, int down, int left, int right, in
     }
     player->playerRect.x = player->playerX;
     player->playerRect.y = player->playerY;
-    printf("PX: %d, PY %d\n", player->playerX, player->playerY);
+    //printf("PX: %d, PY %d\n", (player->playerX + player->playerRect.w/2), (player->playerY + player->playerRect.h/2));
 }
 
 void renderPlayer(Player* player, SDL_Renderer* renderer) {

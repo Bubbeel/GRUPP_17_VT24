@@ -2,6 +2,7 @@
 
 #ifndef gridmap_h
 #define gridmap_h
+#include "objects/player.h"
 
 // !!!IMPORTANT Define the size of the grid IMPORTANT!!!
 //Currently the sizes do not scale automatically to the window size, they are hardcoded
@@ -35,7 +36,7 @@ typedef enum
 // Defines the structure to represent a single cell in the grid
 typedef struct 
 {
-    //int cellSize;
+    SDL_Rect cellRect;
     CellType type;
     // Add additional fields if needed
 } GridCell;
@@ -51,7 +52,7 @@ void loadMapFromFile(const char* filename, GridMap* map);
 SDL_Texture* loadGridMap(SDL_Renderer *renderer);
 void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, int playerX, int playerY, int screenWidth, int screenHeight);
 void renderGridMap(SDL_Renderer *renderer, GridMap* map, SDL_Texture* texture);
-void getPlayerGridPosition(int playerX, int playerY, int* gridX, int* gridY);
+void getPlayerGridPosition(int playerX, int playerY, int* gridX, int* gridY, GridMap* map);
 void destroyGridMap(GridMap* gridMap);
 
 #endif // gridmap_h
