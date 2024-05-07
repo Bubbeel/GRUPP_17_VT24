@@ -23,28 +23,6 @@
 #define CLOSE_DISTANCE_THRESHOLD 10
 #define FLAG_SPEED 2
 
-// WIP - Konrad
-typedef struct
-{
-    SDL_Texture* texture;
-    SDL_Rect rect;
-    SDL_Surface surface;
-    char tag;
-} GameObject;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Function prototypes
 bool initSDL(SDL_Window **pWindow, SDL_Renderer **pRenderer);
 void closeSDL(SDL_Window *pWindow, SDL_Renderer *pRenderer);
@@ -54,12 +32,8 @@ void updateGame(Player *pPlayer, int *player2X, int *player2Y, SDL_Rect *flagRec
 void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Player *pPlayer, int player2X, int player2Y, SDL_Texture *pTexture2, SDL_Rect flagRect, SDL_Texture *pTextureFlag, Flag* flag);
 void cleanup(Player *pPlayer, SDL_Texture *pTexture1, SDL_Texture *pTexture2, SDL_Texture *pTextureFlag, SDL_Texture *gridTexture);
 
-
-
-
 int main(int argc, char **argv)
 {
-
     SDL_Window *pWindow = NULL;
     SDL_Renderer *pRenderer = NULL;
     SDL_Texture *pTexture1 = NULL;
@@ -81,8 +55,8 @@ int main(int argc, char **argv)
     bool isServer = false;
 
     int player1X = playerRect1.w;
-    int player1Y = playerRect1.h; 
-    int player2X = WINDOW_WIDTH - playerRect2.w; 
+    int player1Y = playerRect1.h;
+    int player2X = WINDOW_WIDTH - playerRect2.w;
     int player2Y = WINDOW_HEIGHT - playerRect2.h;
     int player1VelocityX = 0;
     int player1VelocityY = 0;
@@ -152,13 +126,22 @@ int main(int argc, char **argv)
         }
     }
 
+    // Display menu
+    int menuChoice = displayMenu(pWindow, pRenderer);
 
-
-
-
-
-
-
+    // Handle menu choice
+    if (menuChoice == 1)
+    {
+        // Start game
+        printf("Starting game...\n");
+    }
+    else if (menuChoice == 2)
+    {
+        // Quit
+        printf("Quitting game...\n");
+        closeSDL(pWindow, pRenderer);
+        return 0;
+    }
 
     // Main game loop
     while (!closeWindow)
