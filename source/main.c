@@ -9,10 +9,8 @@
 #include "gridMap.h"
 #include "collisionDetection.h"
 
-// Player Speed is now in the player.c file
-
 #define LEVEL_WIDTH 2816
-#define LEVEL_HEIGHT 1600
+#define LEVEL_HEIGHT 2100
 
 #define WINDOW_WIDTH 1408
 #define WINDOW_HEIGHT 800
@@ -218,13 +216,14 @@ int main(int argc, char** argv) {
     }
 
     // Handle player input and movement for player 1 
-    handlePlayerInput(pPlayer, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT);
+    handlePlayerInput(pPlayer, up1, down1, left1, right1, LEVEL_WIDTH, LEVEL_HEIGHT);
 
     // Handle player input and movement for player 2
     //handlePlayerInput(&playerRect2, &player2X, &player2Y, &player2VelocityX, &player2VelocityY, up2, down2, left2, right2, LEVEL_WIDTH, LEVEL_HEIGHT, playerRect2.w, playerRect2.h, SPEED);
 
     // Render players
-    renderVisibleMap(pRenderer, map, pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT);
+    //renderVisibleMap(pRenderer, map, pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT);
+    renderGridMapCentered(pRenderer, map, pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT, LEVEL_WIDTH, LEVEL_HEIGHT);
     flagAnimation(pRenderer, flag);
     renderPlayer(pPlayer,pRenderer);
 

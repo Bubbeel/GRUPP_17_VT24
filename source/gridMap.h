@@ -51,7 +51,8 @@ GridMap* createGridMap();
 void loadMapFromFile(const char* filename, GridMap* map);
 SDL_Texture* loadGridMap(SDL_Renderer *renderer);
 void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, Player* player, int screenWidth, int screenHeight);
-void renderGridMap(SDL_Renderer *renderer, GridMap* map, SDL_Texture* texture);
+void renderGridMap(SDL_Renderer *renderer, GridMap* map, int playerX, int playerY, int windowWidth, int windowHeight);
+void renderGridMapCentered(SDL_Renderer *renderer, GridMap* map, Player* player, int windowWidth, int windowHeight, int levelWidth, int levelHeight);
 void getPlayerGridPosition(int playerX, int playerY, int* gridX, int* gridY, GridMap* map);
 void destroyGridMap(GridMap* gridMap);
 

@@ -43,6 +43,6 @@ int checkCollision(SDL_Rect a, SDL_Rect b)
         //printf("Collision not detected\n");
         return 0;
     }
-    printf("Collision detected\n");
+    //printf("Collision detected\n");
     return 1;
 }

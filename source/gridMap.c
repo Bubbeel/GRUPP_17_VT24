@@ -86,11 +86,80 @@ SDL_Texture* loadGridMap(SDL_Renderer *renderer)
     return pTextureTest;
 }
 
+void renderGridMap(SDL_Renderer *renderer, GridMap* map, int playerX, int playerY, int windowWidth, int windowHeight) {
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            // Calculate screen position based on player's position
+            int screenX = map->cells[y][x].cellRect.x - playerX;
+            int screenY = map->cells[y][x].cellRect.y - playerY;
 
-void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, Player* player, int screenWidth, int screenHeight) {
+            // Only render cells within the screen bounds
+            if (screenX + CELL_SIZE >= 0 && screenX <= windowWidth && screenY + CELL_SIZE >= 0 && screenY <= windowHeight) {
+                switch (map->cells[y][x].type) {
+                    case EMPTY:
+                        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+                        break;
+                    case OBSTACLE:
+                        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+                        break;
+                    case FLAG:
+                        SDL_SetRenderDrawColor(renderer, 255, 255, 0 ,255);
+                        break;
+                    default:
+                        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+                        break;
+                }
+                SDL_Rect cellRect = { screenX, screenY, CELL_SIZE, CELL_SIZE };
+                SDL_RenderFillRect(renderer, &cellRect);
+            }
+        }
+    }
+}
+
+// New function to render grid map centered around player
+void renderGridMapCentered(SDL_Renderer *renderer, GridMap* map, Player* player, int windowWidth, int windowHeight, int levelWidth, int levelHeight) {
+    // Calculate the top-left corner of the screen based on player's position
+    player->camera.x = (player->playerX + player->playerRect.w/2) - windowWidth / 2;
+    player->camera.y = (player->playerY + player->playerRect.h/2) - windowHeight / 2;
+
+
+    // Ensure screen bounds are within the world bounds
+    if (player->camera.x < 0) {
+        player->camera.x = 0;
+    } 
+    else if (player->camera.x + windowWidth > levelWidth) 
+    {
+        player->camera.x = levelWidth - windowWidth;
+    }
+    // else if (screenLeft + windowWidth / 2 < playerX)
+    // {
+    //     screenLeft = playerX + windowWidth / 2;
+    // }
+
+    if (player->camera.y < 0) {
+        player->camera.y = 0;
+    } 
+    else if (player->camera.y + windowHeight > levelHeight) 
+    {
+        player->camera.y = levelHeight - windowHeight;
+    }
+    // else if (screenTop + windowHeight / 2 < playerY)
+    // {
+    //     screenTop = playerY + windowHeight / 2;
+    // }
+    
+    //printf("ScreenLeft: %d, ScreenTop: %d, playerX: %d, playerY: %d, windowWidth: %d, windowHeight: %d \n", screenLeft, screenTop, playerX, playerY, windowWidth, windowHeight);
+
+    // Render the grid map relative to the calculated screen position
+    renderGridMap(renderer, map, player->camera.x, player->camera.y, windowWidth, windowHeight);
+}
+
+
+void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, Player* player, int screenWidth, int screenHeight) 
+{
     // Calculate the top-left corner of the visible area based on the camera's position
-    int cameraX = player->playerX - (screenWidth / 2);
-    int cameraY = player->playerY - (screenHeight / 2);
+    int cameraX = player->playerX - (screenWidth );
+    int cameraY = player->playerY - (screenHeight );
 
     // Ensure the camera stays within the bounds of the map
     if (cameraX < 0) 
@@ -109,14 +178,15 @@ void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, Player* player, int 
     {
         cameraY = GRID_HEIGHT*CELL_SIZE - screenHeight;
     }
-    printf("CameraX: %d, CameraY: %d \n", cameraX, cameraY);
 
     // Calculate the position of the camera relative to the player
-    int offsetX = cameraX /*- (player->playerX - (screenWidth / 2))*/;
-    int offsetY = cameraY /*- (player->playerY - (screenHeight / 2))*/;
+    int offsetX = player->playerX - cameraX;
+    int offsetY = player->playerY - cameraY;
+    printf("OffsetX: %d, OffsetY: %d \n", offsetX, offsetY);
+
 
     // Render only the portion of the map that is visible on the screen
-    for (int y = 0; y < screenHeight/CELL_SIZE; y++) 
+    for (int y = cameraY; y < screenHeight/CELL_SIZE; y++) 
     {
         for (int x = cameraX; x < screenWidth/CELL_SIZE; x++) 
         {
@@ -214,36 +284,36 @@ void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, Player* player, int 
 // }
 
 //Renders grid map either with pure colors or sprites, check comments in the definiton of the function
-void renderGridMap(SDL_Renderer *renderer, GridMap *map, SDL_Texture* texture) 
-{
-    for (int y = 4; y < GRID_HEIGHT; y++) {
-        for (int x = 4; x < GRID_WIDTH; x++) {
-            switch (map->cells[y][x].type) {
-                case EMPTY:
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); //leaving this if color is needed instead
-                    //SDL_RenderCopy(renderer, texture, NULL, &cellRect); //for rendering sprite
-                    break;
-                case OBSTACLE:
-                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); //leaving this if color is needed instead
-                    //SDL_RenderCopy(renderer, texture, NULL, &cellRect); //for rendering sprite
-                    break;
-                case FLAG:
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 0 ,255); //leaving this if color is needed instead
-                    break;
-                default:
-                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); //if there are errors, there will be black squares
-                    break;
-                // Add more cases for other cell types
-            }
-            map->cells[y][x].cellRect.x = x * CELL_SIZE;
-            map->cells[y][x].cellRect.y = y * CELL_SIZE;
-            map->cells[y][x].cellRect.w = CELL_SIZE;
-            map->cells[y][x].cellRect.h = CELL_SIZE;
-            //printf("ScreenX: %d, ScreenY: %d\n", screenX, screenY);
-            SDL_RenderFillRect(renderer, &map->cells[y][x].cellRect); //comment or delete if not using SDL_SetRenderDrawColor
-        }
-    }
-}
+// void renderGridMap(SDL_Renderer *renderer, GridMap *map, SDL_Texture* texture) 
+// {
+//     for (int y = 0; y < GRID_HEIGHT; y++) {
+//         for (int x = 0; x < GRID_WIDTH; x++) {
+//             switch (map->cells[y][x].type) {
+//                 case EMPTY:
+//                     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); //leaving this if color is needed instead
+//                     //SDL_RenderCopy(renderer, texture, NULL, &cellRect); //for rendering sprite
+//                     break;
+//                 case OBSTACLE:
+//                     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); //leaving this if color is needed instead
+//                     //SDL_RenderCopy(renderer, texture, NULL, &cellRect); //for rendering sprite
+//                     break;
+//                 case FLAG:
+//                     SDL_SetRenderDrawColor(renderer, 255, 255, 0 ,255); //leaving this if color is needed instead
+//                     break;
+//                 default:
+//                     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); //if there are errors, there will be black squares
+//                     break;
+//                 // Add more cases for other cell types
+//             }
+//             map->cells[y][x].cellRect.x = x * CELL_SIZE;
+//             map->cells[y][x].cellRect.y = y * CELL_SIZE;
+//             map->cells[y][x].cellRect.w = CELL_SIZE;
+//             map->cells[y][x].cellRect.h = CELL_SIZE;
+//             //printf("ScreenX: %d, ScreenY: %d\n", screenX, screenY);
+//             SDL_RenderFillRect(renderer, &map->cells[y][x].cellRect); //comment or delete if not using SDL_SetRenderDrawColor
+//         }
+//     }
+// }
 
 //Checks the position under player
 void getPlayerGridPosition(int playerX, int playerY, int* gridX, int* gridY, GridMap* map) 

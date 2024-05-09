@@ -33,6 +33,8 @@ Player* createPlayer(SDL_Renderer* renderer) {
     pPlayer->playerVelocityX = 0;
     pPlayer->playerVelocityY = 0;
     pPlayer->speed = SPEED;
+    pPlayer->camera.x = 0;
+    pPlayer->camera.y = 0;
     pPlayer->camera.h = WINDOW_HEIGHT;
     pPlayer->camera.w = WINDOW_WIDTH; 
 
@@ -41,8 +43,6 @@ Player* createPlayer(SDL_Renderer* renderer) {
 
 void handlePlayerInput(Player* player, int up, int down, int left, int right, int levelWidth, int levelHeight) 
 {
-    const double dt = 1.0 / PLAYER_FRAME_RATE; // Calculate delta time
-
     player->playerVelocityX = player->playerVelocityY = 0;
     if (up && !down) player->playerVelocityY = -(player->speed);
     if (down && !up) player->playerVelocityY = player->speed;
@@ -53,38 +53,23 @@ void handlePlayerInput(Player* player, int up, int down, int left, int right, in
 
     if ((player->playerX < 0) || (player->playerX + player->playerRect.w > levelWidth)) 
     {
+        printf("PX back\n");
         player->playerX -= (player->playerVelocityX / 60);
     }
     if ((player->playerY < 0) || (player->playerY + player->playerRect.h > levelHeight))
     {
+        printf("PY back\n");
         player->playerY -= (player->playerVelocityY / 60);
     }
-    player->playerRect.x = player->playerX;
-    player->playerRect.y = player->playerY;
-    //printf("PX: %d, PY %d\n", (player->playerX + player->playerRect.w/2), (player->playerY + player->playerRect.h/2));
+    // player->playerX -= player->camera.x;
+    // player->playerY -= player->camera.y; 
+    player->playerRect.x = player->playerX - player->camera.x;
+    player->playerRect.y = player->playerY - player->camera.y; 
+    //printf("PX: %d, PY %d, levelh: %d, levelw: %d\n", (player->playerX + player->playerRect.w/2), (player->playerY + player->playerRect.h/2), levelHeight, levelWidth);
 }
 
 void renderPlayer(Player* player, SDL_Renderer* renderer) {
     SDL_RenderCopy(renderer, player->pPlayerTexture, NULL, &player->playerRect);
-
-    player->camera.x = (player->playerX + player->playerRect.w/2) - WINDOW_WIDTH/2;
-    player->camera.y = (player->playerY + player->playerRect.h/2) - WINDOW_HEIGHT/2;
-    if( player->camera.x < 0 )
-    { 
-       player->camera.x = 0;
-    }
-    if( player->camera.y < 0 )
-    {
-        player->camera.y = 0;
-    }
-    if( player->camera.x > WINDOW_WIDTH - player->camera.w )
-    {
-        player->camera.x = WINDOW_WIDTH - player->camera.w;
-    }
-    if( player->camera.y > WINDOW_HEIGHT - player->camera.h )
-    {
-        player->camera.y = WINDOW_HEIGHT - player->camera.h;
-    }
 }
 
 void destroyPlayer(Player* player) {
