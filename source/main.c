@@ -32,8 +32,6 @@ typedef struct
     char tag;
 } GameObject;
 
-SDL_Rect camera = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
-
 
 int main(int argc, char** argv) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -211,27 +209,6 @@ int main(int argc, char** argv) {
 
     // Render Grid Map
     //renderGridMap(pRenderer, map, gridTexture);
-    renderVisibleMap(pRenderer, map, pPlayer->playerX, pPlayer->playerY, WINDOW_WIDTH, WINDOW_HEIGHT);
-
-    // camera.x = (pPlayer->playerX + pPlayer->playerRect.w/2) - WINDOW_WIDTH/2;
-    // camera.y = (pPlayer->playerY + pPlayer->playerRect.h/2) - WINDOW_HEIGHT/2;
-    // //printf("playervelx: %d , playervely: %d \n",pPlayer->playerVelocityX, pPlayer->playerVelocityY);
-    // if( camera.x < 0 )
-    // { 
-    //    camera.x = 0;
-    // }
-    // if( camera.y < 0 )
-    // {
-    //     camera.y = 0;
-    // }
-    // if( camera.x > WINDOW_WIDTH - camera.w )
-    // {
-    //     camera.x = WINDOW_WIDTH - camera.w;
-    // }
-    // if( camera.y > WINDOW_HEIGHT - camera.h )
-    // {
-    //     camera.y = WINDOW_HEIGHT - camera.h;
-    // }
     
     // Collision Check with the flag
     if (checkCollision(pPlayer->playerRect, flag->flagRect))
@@ -240,8 +217,6 @@ int main(int argc, char** argv) {
         flag->flagRect.y = pPlayer->playerY;
     }
 
-    flagAnimation(pRenderer, flag);
-
     // Handle player input and movement for player 1 
     handlePlayerInput(pPlayer, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -249,15 +224,14 @@ int main(int argc, char** argv) {
     //handlePlayerInput(&playerRect2, &player2X, &player2Y, &player2VelocityX, &player2VelocityY, up2, down2, left2, right2, LEVEL_WIDTH, LEVEL_HEIGHT, playerRect2.w, playerRect2.h, SPEED);
 
     // Render players
+    renderVisibleMap(pRenderer, map, pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT);
+    flagAnimation(pRenderer, flag);
     renderPlayer(pPlayer,pRenderer);
+
     SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
 
-
-
-    //printf("FlagX: %d, FlagY: %d\n", flag->flagX, flag->flagY);
     // Probably not needed here, but left it just in case I forget to use it :) - Konrad
     getPlayerGridPosition(pPlayer->playerX, pPlayer->playerY, &pPlayer->playerGridX, &pPlayer->playerGridY, map);
-    //getPlayerGridPosition(flag->flagX, flag->flagY, tempX, tempY);
 
     // Present renderer
     SDL_RenderPresent(pRenderer);

@@ -7,6 +7,7 @@ typedef struct {
     SDL_Surface* playerSurface;
     SDL_Texture* pPlayerTexture;
     SDL_Rect playerRect;
+    SDL_Rect camera;
     int playerX, playerY;
     int playerVelocityX, playerVelocityY;
     int playerGridX, playerGridY; //used for getPlayerPosition and is saved here!!

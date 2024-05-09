@@ -50,7 +50,7 @@ typedef struct
 GridMap* createGridMap();
 void loadMapFromFile(const char* filename, GridMap* map);
 SDL_Texture* loadGridMap(SDL_Renderer *renderer);
-void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, int playerX, int playerY, int screenWidth, int screenHeight);
+void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, Player* player, int screenWidth, int screenHeight);
 void renderGridMap(SDL_Renderer *renderer, GridMap* map, SDL_Texture* texture);
 void getPlayerGridPosition(int playerX, int playerY, int* gridX, int* gridY, GridMap* map);
 void destroyGridMap(GridMap* gridMap);
