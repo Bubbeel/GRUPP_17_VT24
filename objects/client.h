@@ -11,6 +11,7 @@ typedef struct {
     TCPsocket clientSocket;
 	UDPpacket *pPacket;
     UDPsocket udpSocket;
+    Player *player[4];
     int clientId;
 }Client;
 

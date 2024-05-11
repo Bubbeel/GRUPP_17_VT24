@@ -3,8 +3,11 @@
 
 //I recommend putting speed as a value that we put in player.speed in this function, and not define it in main.c
 //In theory if we want we can technically put #define SPEED 100 in player.c, but not in main.c
-Player* createPlayer(SDL_Renderer* renderer, int speed) {
+Player* createPlayer(SDL_Renderer* renderer) {
     Player* pPlayer = malloc(sizeof(Player));
+    int speed = 100;
+    pPlayer->playerX = 0;
+    pPlayer->playerY = 0;
     if (!pPlayer) {
         return NULL;
     }
@@ -30,6 +33,7 @@ Player* createPlayer(SDL_Renderer* renderer, int speed) {
     pPlayer->playervelocityX = 0;
     pPlayer->playervelocityY = 0;
     pPlayer->speed = speed;
+    pPlayer->playerId = 0;
 
     return pPlayer;
 }

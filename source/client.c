@@ -3,23 +3,35 @@
 #include "../objects/client.h"
 #include "../objects/player.h"
 #include "../objects/common.h"
+#include "../objects/server.h"
 
 #define SERVER_IP "127.0.0.1"
-#define TCP_PORT 3001
-#define UDP_PORT 3000
+#define TCP_PORT 3000
+#define UDP_PORT 3001
 
 Client *createClient();
 int connectToServer(Client *pClient);
 int receiveFromServer(Client *pClient, Player *player);
 void closeClient(Client *pClient);
-void sendDataTCP(Client *pClient, char *data);
 void sendDataUDP(Client *pClient, Player *Player);
 
 Client *createClient(){
+    Server *pServer;
+    Player *player;
+    GameObject gameObject;
+    IPaddress ip;
+    SDL_Renderer *pRenderer = gameObject.renderer;
     Client *pClient=malloc(sizeof(Client));
     pClient->clientSocket=NULL;
     pClient->udpSocket=NULL;
     pClient->pPacket=NULL;
+    for(int i = 0; i < 4; i++) {
+        pClient->player[i]=malloc(sizeof(Player));
+    }
+    pClient->clientId = 0;
+    player->playerId = pClient->clientId;
+    pClient->clientId++;
+    pClient->ip=ip;
     return pClient;
 }
 
@@ -29,13 +41,12 @@ int connectToServer(Client *pClient){
         fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
         return 1;
     }
-
+    
     if(SDLNet_ResolveHost(&pClient->ip, SERVER_IP, TCP_PORT)==-1){
         fprintf(stderr, "SDLNet_ResloveHost: %s\n", SDLNet_GetError());
         SDLNet_Quit();
         return 1;
     }
-
     pClient->clientSocket = SDLNet_TCP_Open(&pClient->ip);
     if(!pClient->clientSocket){
         fprintf(stderr, "SDLNet_TCP_Open: %s\n", SDLNet_GetError());
@@ -60,20 +71,6 @@ int connectToServer(Client *pClient){
     return 0;
 }
 
-int receiveFromServer(Client *pClient, Player *player) {
-    while (SDLNet_UDP_Recv(pClient->udpSocket, pClient->pPacket) > 0) {
-        PlayerPackage *pkg = (PlayerPackage *)pClient->pPacket->data;
-
-        player->playerX = pkg->x;
-        player->playerY = pkg->y;
-        player->direction = pkg->direction;
-
-        printf("Received player data: X=%d, Y=%d, Direction=%d\n", player->playerX, player->playerY, player->direction);
-    }
-    fprintf(stderr, "No data received from server\n");
-    return 1; 
-}
-
 void closeClient(Client *pClient){
     if(pClient->clientSocket){
         SDLNet_TCP_Close(pClient->clientSocket);
@@ -84,7 +81,27 @@ void closeClient(Client *pClient){
     if(pClient->pPacket){
         SDLNet_FreePacket(pClient->pPacket);
     }
+    free(pClient);
     SDLNet_Quit();
+}
+
+int receiveFromServer(Client *pClient, Player *player) {
+    if(SDLNet_UDP_Recv(pClient->udpSocket, pClient->pPacket) == 0){
+        printf("correct socket");
+    }
+    if(SDLNet_UDP_Recv(pClient->udpSocket, pClient->pPacket) > 0) {
+        PlayerPackage *pkg = (PlayerPackage *)pClient->pPacket->data;
+
+        player->playerX = pkg->x;
+        player->playerY = pkg->y;
+        player->direction = pkg->direction;
+
+        printf("Received player data: X=%d, Y=%d, Direction=%d\n", player->playerX, player->playerY, player->direction);
+    }
+    fprintf(stderr, "No data received from server\n");
+    printf("udpsocket: %p\n", pClient->udpSocket);
+    printf("packet: %p\n", pClient->pPacket);
+    return 1; 
 }
 
 

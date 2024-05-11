@@ -11,14 +11,15 @@ typedef struct {
 	UDPpacket *pPacket;
     int *pNrOfClients;
     Client clients[4];
+    Player *player[4];
 }Server;
 
 Server *createServer();
-int acceptClientConnections(Server *pServer);
-int sendMessageToClient(TCPsocket clientSocket); 
-int handleTCPData(char *receivedData, char *responseData);
-int handleUDPData(char *receivedData, char *responseData);
-void listenForClientData(Server *pServer, Client *pClient, Player *pPlayer);
+int acceptClientConnections(Server *pServer, int *pNrOfClients, Client *client);
+int sendMessageToClient(TCPsocket clientSocket);
+void handlePlayerMovementData(char *data, Client *client, int *pNrOfClients, Server *pServer);
+void listenForClientData(Server *pServer, Client *pClients, int *pNrOfClients);
 void sendGameData(Server *pServer, Client *pClient, Player *player);
+void sendPlayerPosition(Client *client, Player *player);
 
 #endif

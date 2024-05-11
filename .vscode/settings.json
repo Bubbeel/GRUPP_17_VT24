@@ -61,6 +61,7 @@
     "server.h": "c",
     "game.h": "c",
     "player.h": "c",
-    "collisiondetection.h": "c"
+    "collisiondetection.h": "c",
+    "map.h": "c"
   }
 }

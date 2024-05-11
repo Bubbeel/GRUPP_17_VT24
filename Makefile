@@ -1,12 +1,13 @@
-# Makefile for Windows
+# Makefile for macOS
 SRCDIR=./source
 CC=gcc
-INCLUDE = C:\msys64\mingw64\include\SDL2 
+INCLUDE = -I/usr/local/include/SDL2
+LIBS = -L/usr/local/lib
 CFLAGS = -g $(INCLUDE) -c 
-LDFLAGS = -lmingw32 -lSDL2main -lSDL2_image -lSDL2 -lSDL2_ttf -lSDL2_net -lm
+LDFLAGS = $(LIBS) -lSDL2main -lSDL2_image -lSDL2 -lSDL2_ttf -lSDL2_net -lm
 
-CTFGame.exe: main.o player.o flag.o gridMap.o collisionDetection.o client.o server.o menu.o
-	$(CC) -o CTFGame.exe main.o player.o flag.o gridMap.o collisionDetection.o client.o server.o menu.o $(LDFLAGS)
+CTFGame: main.o player.o flag.o gridMap.o collisionDetection.o client.o server.o menu.o
+	gcc -o CTFGame main.o player.o flag.o gridMap.o collisionDetection.o client.o server.o menu.o $(LDFLAGS)
 
 main.o: $(SRCDIR)/main.c
 	$(CC) $(CFLAGS) $(SRCDIR)/main.c
@@ -33,5 +34,5 @@ menu.o: $(SRCDIR)/menu.c
 	$(CC) $(CFLAGS) $(SRCDIR)/menu.c
 
 clean:
-	del CTFGame.exe
-	del *.o
+	rm *.exe
+	rm *.o

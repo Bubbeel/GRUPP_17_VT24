@@ -9,4 +9,20 @@ typedef struct{
     int clientId;
 }PlayerPackage;
 
+typedef struct
+{
+    SDL_Texture* texture;
+    SDL_Rect rect;
+    SDL_Surface surface;
+    SDL_Renderer* renderer;
+    char tag;
+} GameObject;
+
+typedef struct {
+    bool up;
+    bool down;
+    bool left;
+    bool right;
+} PlayerMovementData;
+
 #endif
