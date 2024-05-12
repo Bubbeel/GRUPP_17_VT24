@@ -32,7 +32,6 @@ void updateGame(Client *pClients, int *pNumClients, Player *pPlayer, PlayerMovem
 void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Player *pPlayer, SDL_Texture *pTexture1, SDL_Rect flagRect, SDL_Texture *pTextureFlag, Flag* flag, Client *pClient, Server *pServer);
 void cleanup(Player *pPlayer, SDL_Texture *pTexture1, SDL_Texture *pTextureFlag, SDL_Texture *gridTexture);
 void renderOtherClients(SDL_Renderer* pRenderer, Client* clients, SDL_Texture* clientTexture, Server *pServer, Player *pPlayer);
-void sendPlayerPosition(Client *client, Player *player);
 
 int main(int argc, char **argv)
 {
@@ -284,14 +283,12 @@ void handleEvents(bool *closeWindow, PlayerMovementData *movementData, Client *p
 }
 
 void updateGame(Client *pClients, int *pNumClients, Player *pPlayer, PlayerMovementData *movementData, Server *pServer) {
-    
     printf("numclients=%d\n", *pNumClients);
     for(int i=0; i<*pNumClients; i++){
-        sendDataUDP(&pServer->clients[i], pPlayer);
-        listenForClientData(pServer, &pServer->clients[i], pNumClients); 
+        sendDataUDP(&pServer->clients[i], pPlayer, pClients->pPacket, pClients->udpSocket);
+        listenForClientData(pServer, &pServer->clients[i], pNumClients, pServer->udpSocket, pClients->pPacket); 
         printf("Sent player data: X=%d, Y=%d, Direction=%d\n", pPlayer->playerX, pPlayer->playerY, pPlayer->direction);
-        handlePlayerInput(&pPlayer->playerRect, &pPlayer->playerX, &pPlayer->playerY, &pPlayer->playervelocityX, &pPlayer->playervelocityY, movementData->up, movementData->down, movementData->left, movementData->right, WINDOW_WIDTH, WINDOW_HEIGHT, pPlayer->playerRect.w, pPlayer->playerRect.h, SPEED);
-        receiveFromServer(&pServer->clients[i], pPlayer);
+        receiveFromServer(&pServer->clients[i], pPlayer, pServer->pPacket, pClients->udpSocket);
     }
 }
 

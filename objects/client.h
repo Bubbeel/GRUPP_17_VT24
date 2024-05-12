@@ -22,7 +22,7 @@ void closeClient(Client *pClient);
 
 //UDP
 
-void sendDataUDP(Client *pClient, Player *player);
-int receiveFromServer(Client *pClient, Player *player);
+void sendDataUDP(Client *pClient, Player *player, UDPpacket *packet, UDPsocket udpSocket);
+int receiveFromServer(Client *pClient, Player *player, UDPpacket *packet, UDPsocket udpSocket);
 
 #endif
