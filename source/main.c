@@ -8,6 +8,8 @@
 #include "objects/flag.h"
 #include "objects/gridMap.h"
 #include "objects/collisionDetection.h"
+#include "objects/menu.h" // Include the menu header file
+
 
 #define LEVEL_WIDTH 2816
 #define LEVEL_HEIGHT 2100
@@ -42,6 +44,17 @@ int main(int argc, char** argv) {
         SDL_Quit();
         return 1;
     }
+
+    // Load menu
+    int menuChoice = displayMenu(pWindow, pRenderer);
+    if (menuChoice == 2) { // If quit is chosen from the menu, exit the game
+        SDL_DestroyRenderer(pRenderer);
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 0;
+    }
+
+
     //create GridMap obj and initialize GridMap
     GridMap* map = createGridMap();
     loadMapFromFile("resources/map.txt", map);
@@ -81,7 +94,7 @@ int main(int argc, char** argv) {
         SDL_Quit();
         return 1;
     }
-    
+
     SDL_Texture* pTexture2 = SDL_CreateTextureFromSurface(pRenderer, pSurface2);
     SDL_FreeSurface(pSurface2);
     if (!pPlayer->pPlayerTexture || !pTexture2 || !flag->flagTexture) {
@@ -105,7 +118,7 @@ int main(int argc, char** argv) {
     // int player1X = playerRect1.w;
     // int player1Y = playerRect1.h; 
 
-    int player2X = WINDOW_WIDTH - playerRect2.w; 
+    int player2X = WINDOW_WIDTH - playerRect2.w;
     int player2Y = WINDOW_HEIGHT - playerRect2.h;
 
     flag->flagRect.w /= 5;
@@ -191,44 +204,44 @@ int main(int argc, char** argv) {
             }
         }
 
-    SDL_RenderClear(pRenderer);
+        SDL_RenderClear(pRenderer);
 
-    // Render Grid Map
-    //renderGridMap(pRenderer, map, gridTexture);
-    
-    // Collision Check with the flag
-    if (checkCollision(pPlayer->playerRect, flag->flagRect))
-    {
-        flag->flagRect.x = pPlayer->playerX;
-        flag->flagRect.y = pPlayer->playerY;
+        // Render Grid Map
+        //renderGridMap(pRenderer, map, gridTexture);
+
+        // Collision Check with the flag
+        if (checkCollision(pPlayer->playerRect, flag->flagRect))
+        {
+            flag->flagRect.x = pPlayer->playerX;
+            flag->flagRect.y = pPlayer->playerY;
+        }
+
+        // Collision Check with walls
+        checkCollisionWall(pPlayer, map);
+
+        // Handle player input and movement for player 1
+        handlePlayerInput(pPlayer, up1, down1, left1, right1, LEVEL_WIDTH, LEVEL_HEIGHT);
+
+        // Handle player input and movement for player 2
+        //handlePlayerInput(&playerRect2, &player2X, &player2Y, &player2VelocityX, &player2VelocityY, up2, down2, left2, right2, LEVEL_WIDTH, LEVEL_HEIGHT, playerRect2.w, playerRect2.h, SPEED);
+
+        // Render players
+        //renderVisibleMap(pRenderer, map, pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT);
+        renderGridMapCentered(pRenderer, map, pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT, LEVEL_WIDTH, LEVEL_HEIGHT);
+        flagAnimation(pRenderer, flag);
+        renderPlayer(pPlayer,pRenderer);
+
+        SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
+
+        // Probably not needed here, but left it just in case I forget to use it :) - Konrad
+        getPlayerGridPosition(pPlayer->playerX, pPlayer->playerY, &pPlayer->playerGridX, &pPlayer->playerGridY, map);
+
+        // Present renderer
+        SDL_RenderPresent(pRenderer);
+
+        // Delay for frame rate control
+        SDL_Delay(1000 / PLAYER_FRAME_RATE);
     }
-
-    // Collision Check with walls
-    checkCollisionWall(pPlayer, map);
-
-    // Handle player input and movement for player 1 
-    handlePlayerInput(pPlayer, up1, down1, left1, right1, LEVEL_WIDTH, LEVEL_HEIGHT);
-
-    // Handle player input and movement for player 2
-    //handlePlayerInput(&playerRect2, &player2X, &player2Y, &player2VelocityX, &player2VelocityY, up2, down2, left2, right2, LEVEL_WIDTH, LEVEL_HEIGHT, playerRect2.w, playerRect2.h, SPEED);
-
-    // Render players
-    //renderVisibleMap(pRenderer, map, pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT);
-    renderGridMapCentered(pRenderer, map, pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT, LEVEL_WIDTH, LEVEL_HEIGHT);
-    flagAnimation(pRenderer, flag);
-    renderPlayer(pPlayer,pRenderer);
-
-    SDL_RenderCopy(pRenderer, pTexture2, NULL, &playerRect2);
-
-    // Probably not needed here, but left it just in case I forget to use it :) - Konrad
-    getPlayerGridPosition(pPlayer->playerX, pPlayer->playerY, &pPlayer->playerGridX, &pPlayer->playerGridY, map);
-
-    // Present renderer
-    SDL_RenderPresent(pRenderer);
-
-    // Delay for frame rate control
-    SDL_Delay(1000 / PLAYER_FRAME_RATE);
-}
     destroyPlayer(pPlayer);
     destroyFlag(flag);
     destroyGridMap(map);

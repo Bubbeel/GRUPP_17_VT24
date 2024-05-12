@@ -6,8 +6,8 @@ INCLUDE = C:\msys64\mingw64\include\SDL2
 CFLAGS = -g -I$(INCLUDE) -c 
 LDFLAGS = -lmingw32 -lSDL2main -lSDL2_image -lSDL2 -lSDL2_ttf -lm
 
-CTFGame: main.o player.o flag.o gridMap.o collisionDetection.o
-	gcc -o CTFGame main.o player.o flag.o gridMap.o collisionDetection.o $(LDFLAGS)
+CTFGame: main.o player.o flag.o gridMap.o collisionDetection.o menu.o
+	gcc -o CTFGame main.o player.o flag.o gridMap.o collisionDetection.o menu.o $(LDFLAGS)
 
 main.o: $(SRCDIR)/main.c
 	$(CC) $(CFLAGS) $(SRCDIR)/main.c
@@ -21,8 +21,11 @@ flag.o: $(SRCDIR)/objects/flag.c
 gridMap.o: $(SRCDIR)/gridMap.c
 	gcc -c $(SRCDIR)/gridMap.c
 
-collisionDetection.o: $(SRCDIR)/collisionDetection.c 
+collisionDetection.o: $(SRCDIR)/collisionDetection.c
 	gcc -c $(SRCDIR)/collisionDetection.c
+
+menu.o: $(SRCDIR)/menu.c
+	$(CC) $(CFLAGS) $(SRCDIR)/menu.c
 
 clean:
 	rm *.exe
