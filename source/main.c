@@ -197,7 +197,7 @@ int main(int argc, char** argv) {
     //renderGridMap(pRenderer, map, gridTexture);
     
     // Collision Check with the flag
-    if (checkCollision(pPlayer->playerRect, flag->flagRect))
+    if (checkCollision(pPlayer, flag->flagRect))
     {
         flag->flagRect.x = pPlayer->playerX;
         flag->flagRect.y = pPlayer->playerY;
@@ -208,6 +208,7 @@ int main(int argc, char** argv) {
 
     // Handle player input and movement for player 1 
     handlePlayerInput(pPlayer, up1, down1, left1, right1, LEVEL_WIDTH, LEVEL_HEIGHT);
+    // printf("RectX, RectY: %d, %d\n", pPlayer->playerX, pPlayer->playerY);
 
     // Handle player input and movement for player 2
     //handlePlayerInput(&playerRect2, &player2X, &player2Y, &player2VelocityX, &player2VelocityY, up2, down2, left2, right2, LEVEL_WIDTH, LEVEL_HEIGHT, playerRect2.w, playerRect2.h, SPEED);

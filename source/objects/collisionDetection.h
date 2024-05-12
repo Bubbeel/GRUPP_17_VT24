@@ -7,7 +7,7 @@
 #include "gridMap.h"
 #include "player.h"
 
-bool checkCollision(SDL_Rect a, SDL_Rect b);
+bool checkCollision(Player* player, SDL_Rect b);
 void checkCollisionWall(Player* player, GridMap* map);
 
 #endif //collisionDetection_h
