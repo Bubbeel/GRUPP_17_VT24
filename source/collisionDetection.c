@@ -1,9 +1,12 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include "collisionDetection.h"
+#include "objects/collisionDetection.h"
+#include "objects/gridMap.h"
+#include "objects/player.h"
 
-int checkCollision(SDL_Rect a, SDL_Rect b)
+bool checkCollision(SDL_Rect a, SDL_Rect b)
 {
     int leftA, rightA, topA, bottomA;
     int leftB, rightB, topB, bottomB;
@@ -23,26 +26,48 @@ int checkCollision(SDL_Rect a, SDL_Rect b)
     if( bottomA <= topB )
     {
         //printf("Collision not detected\n");
-        return 0;
+        return false;
     }
 
     if( topA >= bottomB )
     {
         //printf("Collision not detected\n");
-        return 0;
+        return false;
     }
 
     if( rightA <= leftB )
     {
         //printf("Collision not detected\n");
-        return 0;
+        return false;
     }
 
     if( leftA >= rightB )
     {
         //printf("Collision not detected\n");
-        return 0;
+        return false;
     }
+    
     //printf("Collision detected\n");
-    return 1;
+    return true;
 }
+
+void checkCollisionWall(Player* player, GridMap* map)
+{
+    for (int y = 0; y < GRID_HEIGHT; y++) 
+    {
+        for (int x = 0; x < GRID_WIDTH; x++)
+        {
+            if (strcmp(map->cells[y][x].tag, "Wall") == 0)
+            {
+                if(checkCollision(player->playerRect, map->cells[y][x].cellRect) == true)
+                {
+                    printf("playerRectx: %d, playerRecty: %d, mapcellrect.x: %d, mapcellrect.y: %d\n", player->playerRect.x, player->playerRect.y, map->cells[y][x].cellRect.x, map->cells[y][x].cellRect.y);
+                    // Current problem: when we go below the mid-point the collision doesnt work
+                    // Push the player back
+                    //player->playerX = player->playerRect.x -= player->playerVelocityX / 60;
+                    //player->playerY = player->playerRect.y -= player->playerVelocityY / 60;
+                }
+            }
+        }
+    }
+} 

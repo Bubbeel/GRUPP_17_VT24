@@ -6,8 +6,8 @@
 #include <SDL2/SDL_ttf.h>
 #include "objects/player.h"
 #include "objects/flag.h"
-#include "gridMap.h"
-#include "collisionDetection.h"
+#include "objects/gridMap.h"
+#include "objects/collisionDetection.h"
 
 #define LEVEL_WIDTH 2816
 #define LEVEL_HEIGHT 2100
@@ -20,15 +20,6 @@
 
 #define CLOSE_DISTANCE_THRESHOLD 10
 #define FLAG_SPEED 2
-
-// WIP - Konrad
-typedef struct
-{
-    SDL_Texture* texture;
-    SDL_Rect rect;
-    SDL_Surface surface;
-    char tag;
-} GameObject;
 
 
 int main(int argc, char** argv) {
@@ -51,8 +42,13 @@ int main(int argc, char** argv) {
         SDL_Quit();
         return 1;
     }
+    //create GridMap obj and initialize GridMap
+    GridMap* map = createGridMap();
+    loadMapFromFile("resources/map.txt", map);
+    SDL_Texture* gridTexture;
+    gridTexture = loadGridMap(pRenderer);
 
-    Player* pPlayer = createPlayer(pRenderer);
+    Player* pPlayer = createPlayer(pRenderer, map->cells[5][5].cellRect.x, map->cells[5][5].cellRect.y);
     if (!pPlayer) {
         printf("Failed to create player, Error: %s\n", SDL_GetError());
         SDL_DestroyRenderer(pRenderer);
@@ -75,16 +71,8 @@ int main(int argc, char** argv) {
     SDL_Surface* pSurface2 = IMG_Load("resources/Ship.png");
 
     //temp data storage, if you put anything here, please try to keep all the data in their specific files if possible
-    int* tempX;
-    int* tempY;
-    //
 
-    //create GridMap obj and initialize GridMap
-    GridMap* map = createGridMap();
-    //CHECK THE FILE TO MAKE SURE EVERYTHING IS OKAY
-    loadMapFromFile("resources/map.txt", map);
-    SDL_Texture* gridTexture;
-    gridTexture = loadGridMap(pRenderer);
+    //
 
     if (!pPlayer->playerSurface || !pSurface2 || !flag->flagSurface) {
         printf("Error: %s\n", SDL_GetError());
@@ -110,19 +98,19 @@ int main(int argc, char** argv) {
     SDL_Rect playerRect2;
     SDL_QueryTexture(pTexture2, NULL, NULL, &playerRect2.w, &playerRect2.h);
 
-    playerRect2.w /= 20;
-    playerRect2.h /= 20;
+    // playerRect2.w /= 20;
+    // playerRect2.h /= 20;
 
     //Start positions
-    int player1X = playerRect1.w;
-    int player1Y = playerRect1.h; 
+    // int player1X = playerRect1.w;
+    // int player1Y = playerRect1.h; 
 
     int player2X = WINDOW_WIDTH - playerRect2.w; 
     int player2Y = WINDOW_HEIGHT - playerRect2.h;
 
     flag->flagRect.w /= 5;
-    flag->flagRect.x = WINDOW_WIDTH / 2;
-    flag->flagRect.y = WINDOW_HEIGHT / 2;
+    flag->flagRect.x = map->cells[20][20].cellRect.x;
+    flag->flagRect.y = map->cells[20][20].cellRect.y;
     flag->flagX = flag->flagRect.x;
     flag->flagX = flag->flagRect.y;
 
@@ -214,6 +202,9 @@ int main(int argc, char** argv) {
         flag->flagRect.x = pPlayer->playerX;
         flag->flagRect.y = pPlayer->playerY;
     }
+
+    // Collision Check with walls
+    checkCollisionWall(pPlayer, map);
 
     // Handle player input and movement for player 1 
     handlePlayerInput(pPlayer, up1, down1, left1, right1, LEVEL_WIDTH, LEVEL_HEIGHT);

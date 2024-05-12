@@ -14,7 +14,9 @@ typedef struct {
     int speed;
 } Player;
 
-Player* createPlayer(SDL_Renderer* renderer);
+struct GridMap;
+
+Player* createPlayer(SDL_Renderer* renderer, int startPosX, int startPoxY);
 void handlePlayerInput(Player* player, int up, int down, int left, int right, int levelWidth, int levelHeight);
 void renderPlayer(Player* player, SDL_Renderer* renderer);
 void destroyPlayer(Player* player);

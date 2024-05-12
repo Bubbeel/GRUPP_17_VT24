@@ -6,7 +6,7 @@
 #define WINDOW_WIDTH 1408
 #define WINDOW_HEIGHT 800
 
-Player* createPlayer(SDL_Renderer* renderer) {
+Player* createPlayer(SDL_Renderer* renderer, int startPosX, int startPoxY) {
     Player* pPlayer = malloc(sizeof(Player));
     if (!pPlayer) {
         return NULL;
@@ -28,8 +28,8 @@ Player* createPlayer(SDL_Renderer* renderer) {
     SDL_QueryTexture(pPlayer->pPlayerTexture, NULL, NULL, &pPlayer->playerRect.w, &pPlayer->playerRect.h);
     pPlayer->playerRect.w /= 20;
     pPlayer->playerRect.h /= 20;
-    pPlayer->playerX = pPlayer->playerRect.w;
-    pPlayer->playerY = pPlayer->playerRect.h;
+    pPlayer->playerX = startPosX;
+    pPlayer->playerY = startPoxY;
     pPlayer->playerVelocityX = 0;
     pPlayer->playerVelocityY = 0;
     pPlayer->speed = SPEED;
@@ -53,12 +53,10 @@ void handlePlayerInput(Player* player, int up, int down, int left, int right, in
 
     if ((player->playerX < 0) || (player->playerX + player->playerRect.w > levelWidth)) 
     {
-        printf("PX back\n");
         player->playerX -= (player->playerVelocityX / 60);
     }
     if ((player->playerY < 0) || (player->playerY + player->playerRect.h > levelHeight))
     {
-        printf("PY back\n");
         player->playerY -= (player->playerVelocityY / 60);
     }
     // player->playerX -= player->camera.x;
