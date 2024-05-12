@@ -1,0 +1,7 @@
+# to do
+# Fix up player code (use elements of the struct so that the fucker can move) THIS IS GOING FIRST CUZ ITS PISSING ME OFF
+# Make so map is rendered bigger than it is shown (I think thats done/close to done)
+# Focus camera on each player and follow them
+# Map scrolling (aka moving the camera)
+# For some reason the cells get bigger the bigger dimensions (for the level size, not cell size) I do fucking help
+# Make so the grid map can read positions off of anything we put into it thxx <3 
