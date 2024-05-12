@@ -28,7 +28,7 @@ bool initSDL(SDL_Window **pWindow, SDL_Renderer **pRenderer);
 void closeSDL(SDL_Window *pWindow, SDL_Renderer *pRenderer);
 bool loadResources(SDL_Renderer *pRenderer, SDL_Texture **pTexture1, SDL_Texture **pTextureFlag);
 void handleEvents(bool *closeWindow, PlayerMovementData *movementData, Client *pClient);
-void updateGame(Client *pClients, int numClients, Player *pPlayer, PlayerMovementData *movementData, Server *pServer);
+void updateGame(Client *pClients, int *pNumClients, Player *pPlayer, PlayerMovementData *movementData, Server *pServer);
 void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Player *pPlayer, SDL_Texture *pTexture1, SDL_Rect flagRect, SDL_Texture *pTextureFlag, Flag* flag, Client *pClient, Server *pServer);
 void cleanup(Player *pPlayer, SDL_Texture *pTexture1, SDL_Texture *pTextureFlag, SDL_Texture *gridTexture);
 void renderOtherClients(SDL_Renderer* pRenderer, Client* clients, SDL_Texture* clientTexture, Server *pServer, Player *pPlayer);
@@ -63,7 +63,8 @@ int main(int argc, char **argv)
     int player1Y = playerRect1.h; 
     int player1VelocityX = 0;
     int player1VelocityY = 0;
-    int numClients = *pServer -> pNrOfClients;
+    int *pNumClients=malloc(sizeof(int));
+    *pNumClients=0;
     /*
     flagRect.w /= 5;
     flagRect.x = WINDOW_WIDTH / 2;
@@ -99,13 +100,12 @@ int main(int argc, char **argv)
             closeSDL(pWindow, pRenderer);
             return 1;
         }
-        if (acceptClientConnections(pServer, &numClients, pClient) != 0)
+        if (acceptClientConnections(pServer, pNumClients, pClient) != 0)
         {
             printf("Failed to accept client connections\n");
             closeSDL(pWindow, pRenderer);
             return 1;
         }
-
     }
     else
     {
@@ -127,7 +127,9 @@ int main(int argc, char **argv)
             closeSDL(pWindow, pRenderer);
             return 1;
         }
+        (*pNumClients)++;
     }
+    printf("numclients:%d\n", *pNumClients);
 
     // Display menu and handle user choice
     /*int menuChoice = displayMenu(pWindow, pRenderer);
@@ -141,10 +143,11 @@ int main(int argc, char **argv)
     {
         render(pRenderer, &map, gridTexture, pPlayer,pTexture1, flagRect, pTextureFlag, flag, pClient, pServer);
 
-        handleEvents(&closeWindow, &movementData, pClient);        
+        handleEvents(&closeWindow, &movementData, pClient);   
+
         handlePlayerInput(&pPlayer->playerRect, &pPlayer->playerX, &pPlayer->playerY, &pPlayer->playervelocityX, &pPlayer->playervelocityY, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT, pPlayer->playerRect.w, pPlayer->playerRect.h, SPEED);
 
-        updateGame(pClient, numClients, pPlayer,  &movementData, pServer);
+        updateGame(pClient, pNumClients, pPlayer,  &movementData, pServer);
 
     }
 
@@ -210,15 +213,29 @@ bool loadResources(SDL_Renderer *pRenderer, SDL_Texture **pTexture1, SDL_Texture
         printf("Error: %s\n", SDL_GetError());
         return false;
     }
+
+    if (!pRenderer) {
+        printf("Error: Renderer is null\n");
+        return false;
+    }
+
+    if (!pTexture1 || !pTextureFlag) {
+        printf("Error: Texture pointer is null\n");
+        return false;
+    }
+
     *pTexture1 = SDL_CreateTextureFromSurface(pRenderer, pSurface1);
     *pTextureFlag = SDL_CreateTextureFromSurface(pRenderer, pSurfaceFlag);
+
     SDL_FreeSurface(pSurface1);
     SDL_FreeSurface(pSurfaceFlag);
+
     if (!(*pTexture1) || !(*pTextureFlag))
     {
         printf("Error: %s\n", SDL_GetError());
         return false;
     }
+
     return true;
 }
 
@@ -266,15 +283,14 @@ void handleEvents(bool *closeWindow, PlayerMovementData *movementData, Client *p
     }
 }
 
-void updateGame(Client *pClients, int numClients, Player *pPlayer, PlayerMovementData *movementData, Server *pServer) {
-    numClients=*pServer -> pNrOfClients;
-    printf("numclients=%d\n", numClients);
-    for(int i=0; i<numClients; i++){
+void updateGame(Client *pClients, int *pNumClients, Player *pPlayer, PlayerMovementData *movementData, Server *pServer) {
+    
+    printf("numclients=%d\n", *pNumClients);
+    for(int i=0; i<*pNumClients; i++){
         sendDataUDP(&pServer->clients[i], pPlayer);
-        listenForClientData(pServer, &pServer->clients[i], &numClients); 
+        listenForClientData(pServer, &pServer->clients[i], pNumClients); 
         printf("Sent player data: X=%d, Y=%d, Direction=%d\n", pPlayer->playerX, pPlayer->playerY, pPlayer->direction);
         handlePlayerInput(&pPlayer->playerRect, &pPlayer->playerX, &pPlayer->playerY, &pPlayer->playervelocityX, &pPlayer->playervelocityY, movementData->up, movementData->down, movementData->left, movementData->right, WINDOW_WIDTH, WINDOW_HEIGHT, pPlayer->playerRect.w, pPlayer->playerRect.h, SPEED);
-        printf("nr of clients: %d",numClients); 
         receiveFromServer(&pServer->clients[i], pPlayer);
     }
 }
@@ -307,13 +323,11 @@ void cleanup(Player *pPlayer, SDL_Texture *pTexture1, SDL_Texture *pTextureFlag,
 }
 
 void renderOtherClients(SDL_Renderer* pRenderer, Client* clients, SDL_Texture* clientTexture, Server *pServer, Player *pPlayer) {
-    int numClients = *pServer->pNrOfClients; // Get the number of clients from the server
     for (int i = 0; i < 1; i++) {
         // Check if the client has a valid player
         if (clients->player[i] != NULL) {
             // Render the player of the client
             renderPlayer(clients->player[i], pRenderer);
-            printf("It reached here\n");
 
         }else{
             printf("Client %d has no player\n", i);

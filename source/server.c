@@ -10,18 +10,18 @@
 #define UDPPORT 3001
 
 Server *createServer();
-int acceptClientConnections(Server *pServer, int *pNrOfClients, Client *client);
+int acceptClientConnections(Server *pServer, int *pNumClients, Client *client);
 int sendMessageToClient(TCPsocket clientSocket);
-void handlePlayerMovementData(char *data, Client *client, int *pNrOfClients, Server *pServer);
-void listenForClientData(Server *pServer, Client *pClients, int *pNrOfClients);
+void handlePlayerMovementData(char *data, Client *client, int *pNumClients, Server *pServer);
+void listenForClientData(Server *pServer, Client *pClients, int *pNumClients);
 void sendGameData(Server *pServer, Client *pClient, Player *player);
 void sendPlayerPosition(Client *client, Player *player);
 
 Server *createServer() {
     IPaddress ip;
     Server *pServer = malloc(sizeof(Server));
-    pServer->pNrOfClients = malloc(sizeof(int));
-    *pServer->pNrOfClients = 0;
+    int *pNumClients=malloc(sizeof(int));
+    *pNumClients=0;
     if (SDLNet_ResolveHost(&ip, NULL, PORT) == -1) {
         fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
         pServer->serverSocket=NULL;
@@ -37,19 +37,17 @@ Server *createServer() {
     return pServer;
 }
 
-int acceptClientConnections(Server *pServer, int *pNrOfClients, Client *client) {
+int acceptClientConnections(Server *pServer, int *pNumClients, Client *client) {
     TCPsocket clientSocket;
     GameObject gameObject;
     const char *message = "You are connected";
-   
 
     while(1) {
         clientSocket = SDLNet_TCP_Accept(pServer->serverSocket);
         if (clientSocket) {
             printf("Client connected!\n");
-            (*pServer->pNrOfClients)++;
-            
-            // Send confirmation message to client
+            (*pNumClients)++;
+            printf("Number of clients: %d\n", *pNumClients);
             if (sendMessageToClient(clientSocket) != 0) {
                 SDLNet_TCP_Close(clientSocket);
                 return 1;
@@ -63,10 +61,10 @@ int acceptClientConnections(Server *pServer, int *pNrOfClients, Client *client) 
                 return 1;
             }
             
-            newClient->player[*pServer->pNrOfClients] = client->player[*pServer->pNrOfClients];
+            newClient->player[*pNumClients] = client->player[*pNumClients];
 
             // Add the new client to the array of clients
-            pServer->clients[*pServer->pNrOfClients] = *newClient;
+            pServer->clients[*pNumClients] = *newClient;
         }
     }
     return 0;
@@ -86,7 +84,7 @@ int sendMessageToClient(TCPsocket clientSocket) {
 
     return 0;
 }
-void handlePlayerMovementData(char *data, Client *client, int *pNrOfClients, Server *pServer) {
+void handlePlayerMovementData(char *data, Client *client, int *pNumClients, Server *pServer) {
     int playerX, playerY;
     sscanf(data, "%d,%d", &playerX, &playerY);
 
@@ -95,21 +93,6 @@ void handlePlayerMovementData(char *data, Client *client, int *pNrOfClients, Ser
 }
 
 void sendPlayerPosition(Client *client, Player *player) {
-    // Allocate memory for the packet
-    /*void sendDataUDP(Client *pClient, Player *player) {
-    PlayerPackage pkg;
-    pkg.clientId = pClient->clientId; 
-    pkg.x = player->playerX;
-    pkg.y = player->playerY;
-    pkg.direction = player->direction; 
-
-    memcpy(pClient->pPacket->data, &pkg, sizeof(PlayerPackage));
-    pClient->pPacket->len = sizeof(PlayerPackage);
-
-    pClient->pPacket->address.host = pClient->ip.host;
-    pClient->pPacket->address.port = UDP_PORT;
-    SDLNet_UDP_Send(pClient->udpSocket, -1, pClient->pPacket);
-}*/
     UDPpacket *packet = SDLNet_AllocPacket(512);
     if (!packet) {
         fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
@@ -129,7 +112,7 @@ void sendPlayerPosition(Client *client, Player *player) {
     SDLNet_UDP_Send(client->udpSocket, -1, packet);
 }
 
-void listenForClientData(Server *pServer, Client *pClients, int *pNrOfClients) {
+void listenForClientData(Server *pServer, Client *pClients, int *pNumClients) {
     UDPsocket udpSocket = SDLNet_UDP_Open(3001);
     int channel = -1;
     if (!udpSocket) {
@@ -146,9 +129,8 @@ void listenForClientData(Server *pServer, Client *pClients, int *pNrOfClients) {
         IPaddress *clientAddress = &pPacket->address;
 
         // Find the index of the client that sent the data
-        for (int i = 0; i < *pNrOfClients; i++) {
-            if ((SDLNet_UDP_GetPeerAddress(pClients[i].udpSocket, channel)->host == clientAddress->host) &&
-                (SDLNet_UDP_GetPeerAddress(pClients[i].udpSocket, channel)->port == clientAddress->port)) {
+        for (int i = 0; i < *pNumClients; i++) {
+            if (pClients->ip.host == clientAddress->host && pClients->ip.port == clientAddress->port) {
                 pClients->clientId = i;
                 break;
             }
@@ -160,10 +142,10 @@ void listenForClientData(Server *pServer, Client *pClients, int *pNrOfClients) {
             char *data = (char *)pPacket->data;
 
             // Process the received data (not implemented)
-            handlePlayerMovementData(data, &pClients[pClients->clientId], pNrOfClients, pServer);
+            handlePlayerMovementData(data, &pClients[pClients->clientId], pNumClients, pServer);
 
             // After processing, send the updated player position to all other clients
-            for (int i = 0; i < *pNrOfClients; i++) {
+            for (int i = 0; i < *pNumClients; i++) {
                 if (pClients->player[i] == pClients->player[pClients->clientId]) {
                     sendPlayerPosition(pClients, pClients->player[pClients->clientId]);
                 }

@@ -106,16 +106,23 @@ int receiveFromServer(Client *pClient, Player *player) {
 
 
 void sendDataUDP(Client *pClient, Player *player) {
+    UDPpacket *packet = SDLNet_AllocPacket(512);
+    if (!pClient || !player) {
+        printf("Error: Null pointer\n");
+        return;
+    }
+
     PlayerPackage pkg;
     pkg.clientId = pClient->clientId; 
     pkg.x = player->playerX;
     pkg.y = player->playerY;
     pkg.direction = player->direction; 
 
-    memcpy(pClient->pPacket->data, &pkg, sizeof(PlayerPackage));
-    pClient->pPacket->len = sizeof(PlayerPackage);
+    memcpy(packet->data, &pkg, sizeof(PlayerPackage));
 
-    pClient->pPacket->address.host = pClient->ip.host;
-    pClient->pPacket->address.port = UDP_PORT;
-    SDLNet_UDP_Send(pClient->udpSocket, -1, pClient->pPacket);
+    packet->len = sizeof(PlayerPackage);
+
+    packet->address.host = pClient->ip.host;
+    packet->address.port = UDP_PORT;
+    SDLNet_UDP_Send(pClient->udpSocket, -1, packet);
 }
