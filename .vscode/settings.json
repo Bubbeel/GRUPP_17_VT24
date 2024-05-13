@@ -62,6 +62,7 @@
     "game.h": "c",
     "player.h": "c",
     "collisiondetection.h": "c",
-    "map.h": "c"
+    "map.h": "c",
+    "sdl_net.h": "c"
   }
 }

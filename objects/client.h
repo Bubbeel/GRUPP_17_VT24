@@ -1,4 +1,4 @@
-#ifndef CLIENT_H
+/*#ifndef CLIENT_H
 #define CLIENT_H
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
@@ -7,22 +7,17 @@
 #include "../objects/player.h"
 
 typedef struct {
-    IPaddress ip;
-    TCPsocket clientSocket;
-	UDPpacket *pPacket;
-    UDPsocket udpSocket;
-    Player *player[4];
     int clientId;
-}Client;
+    SDLNet_SocketSet set;
+    UDPsocket udpSocket;
+    UDPpacket *pPacket;
+    Player *players[4];
+} Client;
 
 //TCP
 Client *createClient();
-int connectToServer(Client *pClient);
+int receiveFromServer(Client *pClient, Player *player);
 void closeClient(Client *pClient);
+int sendDataUDP(Client *pClient, Player *player);
 
-//UDP
-
-void sendDataUDP(Client *pClient, Player *player, UDPpacket *packet, UDPsocket udpSocket);
-int receiveFromServer(Client *pClient, Player *player, UDPpacket *packet, UDPsocket udpSocket);
-
-#endif
+#endif*/

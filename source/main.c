@@ -8,8 +8,7 @@
 #include "../objects/player.h"
 #include "../objects/flag.h"
 #include "../objects/gridmap.h"
-#include "../objects/server.h"
-#include "../objects/client.h"
+#include "../objects/serverClient.h"
 #include "../objects/collisionDetection.h"
 #include "../objects/menu.h"
 #include "../objects/common.h"
@@ -23,12 +22,13 @@
 
 #define CLOSE_DISTANCE_THRESHOLD 10
 #define FLAG_SPEED 2
+#define MAX_CLIENTS 4
 
 bool initSDL(SDL_Window **pWindow, SDL_Renderer **pRenderer);
 void closeSDL(SDL_Window *pWindow, SDL_Renderer *pRenderer);
 bool loadResources(SDL_Renderer *pRenderer, SDL_Texture **pTexture1, SDL_Texture **pTextureFlag);
-void handleEvents(bool *closeWindow, PlayerMovementData *movementData, Client *pClient);
-void updateGame(Client *pClients, int *pNumClients, Player *pPlayer, PlayerMovementData *movementData, Server *pServer);
+void handleEvents(bool *closeWindow, PlayerMovementData *movementData, Client *pClient, Server *pServer);
+void updateGameData(Client *pClients, int *pNumClients, Player *pPlayer, Server *pServer);
 void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Player *pPlayer, SDL_Texture *pTexture1, SDL_Rect flagRect, SDL_Texture *pTextureFlag, Flag* flag, Client *pClient, Server *pServer);
 void cleanup(Player *pPlayer, SDL_Texture *pTexture1, SDL_Texture *pTextureFlag, SDL_Texture *gridTexture);
 void renderOtherClients(SDL_Renderer* pRenderer, Client* clients, SDL_Texture* clientTexture, Server *pServer, Player *pPlayer);
@@ -45,8 +45,8 @@ int main(int argc, char **argv)
     SDL_Texture *pTextureFlag = NULL;
     SDL_Texture *gridTexture = NULL;
     PlayerMovementData movementData;
-    Client *pClient = createClient();
     Server *pServer = createServer();
+    Client *pClient = createClient();
     Flag* flag = createFlag(pRenderer);
     Player *pPlayer = createPlayer(pRenderer);
     PlayerPackage *pPlayerPackage;
@@ -89,20 +89,16 @@ int main(int argc, char **argv)
     if (isServer)
     {
         // For server, create and listen for connections
-        if (pServer == NULL) {
+        if (!pServer) {
             printf("Failed to allocate memory for server\n");
             return 1;
         }
-        if (!pServer->serverSocket)
-        {
-            printf("Failed to create server\n");
-            closeSDL(pWindow, pRenderer);
-            return 1;
-        }
-        if (acceptClientConnections(pServer, pNumClients, pClient) != 0)
-        {
-            printf("Failed to accept client connections\n");
-            closeSDL(pWindow, pRenderer);
+        if (SDLNet_UDP_AddSocket(pServer->set, pServer->udpSocket) == -1) {
+            fprintf(stderr, "SDLNet_UDP_AddSocket: %s\n", SDLNet_GetError());
+            SDLNet_FreePacket(pServer->pPacket);
+            SDLNet_UDP_Close(pServer->udpSocket);
+            SDLNet_Quit();
+            free(pServer);
             return 1;
         }
     }
@@ -112,21 +108,8 @@ int main(int argc, char **argv)
             printf("Failed to allocate memory for client\n");
             return 1;
         }
-        if (connectToServer(pClient) != 0)
-        {
-            printf("Failed to connect to server\n");
-            closeClient(pClient);
-            closeSDL(pWindow, pRenderer);
-            return 1;
-        }
-        if (!pPlayer)
-        {
-            printf("Failed to create player, Error: %s\n", SDL_GetError());
-            closeClient(pClient);
-            closeSDL(pWindow, pRenderer);
-            return 1;
-        }
         (*pNumClients)++;
+        pClient->clientId = *pNumClients;
     }
     printf("numclients:%d\n", *pNumClients);
 
@@ -140,13 +123,13 @@ int main(int argc, char **argv)
     // Main game loop
     while (!closeWindow)
     {
-        render(pRenderer, &map, gridTexture, pPlayer,pTexture1, flagRect, pTextureFlag, flag, pClient, pServer);
+        render(pRenderer, &map, gridTexture, pPlayer, pTexture1, flagRect, pTextureFlag, flag, pClient, pServer);
 
-        handleEvents(&closeWindow, &movementData, pClient);   
+        handleEvents(&closeWindow, &movementData, pClient, pServer);   
 
         handlePlayerInput(&pPlayer->playerRect, &pPlayer->playerX, &pPlayer->playerY, &pPlayer->playervelocityX, &pPlayer->playervelocityY, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT, pPlayer->playerRect.w, pPlayer->playerRect.h, SPEED);
 
-        updateGame(pClient, pNumClients, pPlayer,  &movementData, pServer);
+        updateGame(pServer, pClient, pPlayer);
 
     }
 
@@ -239,7 +222,7 @@ bool loadResources(SDL_Renderer *pRenderer, SDL_Texture **pTexture1, SDL_Texture
 }
 
 // Event Handling Function
-void handleEvents(bool *closeWindow, PlayerMovementData *movementData, Client *pClient) {
+void handleEvents(bool *closeWindow, PlayerMovementData *movementData, Client *pClient, Server *pServer) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -261,6 +244,7 @@ void handleEvents(bool *closeWindow, PlayerMovementData *movementData, Client *p
                         movementData->right = true;
                         break;
                 }
+                sendPlayerPosition(pClient, movementData, pServer);
                 break;
             case SDL_KEYUP:
                 switch (event.key.keysym.scancode) {
@@ -277,20 +261,12 @@ void handleEvents(bool *closeWindow, PlayerMovementData *movementData, Client *p
                         movementData->right = false;
                         break;
                 }
+                sendPlayerPosition(pClient, movementData, pServer);
                 break;
         }
     }
 }
 
-void updateGame(Client *pClients, int *pNumClients, Player *pPlayer, PlayerMovementData *movementData, Server *pServer) {
-    printf("numclients=%d\n", *pNumClients);
-    for(int i=0; i<*pNumClients; i++){
-        sendDataUDP(&pServer->clients[i], pPlayer, pClients->pPacket, pClients->udpSocket);
-        listenForClientData(pServer, &pServer->clients[i], pNumClients, pServer->udpSocket, pClients->pPacket); 
-        printf("Sent player data: X=%d, Y=%d, Direction=%d\n", pPlayer->playerX, pPlayer->playerY, pPlayer->direction);
-        receiveFromServer(&pServer->clients[i], pPlayer, pServer->pPacket, pClients->udpSocket);
-    }
-}
 
 void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Player *pPlayer, SDL_Texture *pTexture1, SDL_Rect flagRect, SDL_Texture *pTextureFlag, Flag* flag, Client *pClient, Server *pServer)
 {
@@ -303,7 +279,7 @@ void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Pla
     SDL_Rect srcRect = {flagFrame * flagRect.w, flagRect.w, flagRect.h};
 
     SDL_RenderCopy(pRenderer, pTextureFlag, NULL, &flag->flagRect);
-    moveFlag(&flagRect, pPlayer->playerX, pPlayer->playerY, CLOSE_DISTANCE_THRESHOLD, FLAG_SPEED);
+    //moveFlag(&flagRect, pPlayer->playerX, pPlayer->playerY, CLOSE_DISTANCE_THRESHOLD, FLAG_SPEED);
 
     flagFrame = (flagFrame + 1) % 5;
 
@@ -320,14 +296,15 @@ void cleanup(Player *pPlayer, SDL_Texture *pTexture1, SDL_Texture *pTextureFlag,
 }
 
 void renderOtherClients(SDL_Renderer* pRenderer, Client* clients, SDL_Texture* clientTexture, Server *pServer, Player *pPlayer) {
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 4; i++) {
         // Check if the client has a valid player
-        if (clients->player[i] != NULL) {
+        if (clients->players[i] != NULL) {
             // Render the player of the client
-            renderPlayer(clients->player[i], pRenderer);
+            renderPlayer(clients->players[i], pRenderer);
 
         }else{
             printf("Client %d has no player\n", i);
         }
     }
 }
+
