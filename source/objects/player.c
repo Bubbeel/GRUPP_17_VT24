@@ -59,11 +59,8 @@ void handlePlayerInput(Player* player, int up, int down, int left, int right, in
     {
         player->playerY -= (player->playerVelocityY / 60);
     }
-    // player->playerX -= player->camera.x;
-    // player->playerY -= player->camera.y; 
     player->playerRect.x = player->playerX - player->camera.x;
     player->playerRect.y = player->playerY - player->camera.y; 
-    //printf("PX: %d, PY %d, levelh: %d, levelw: %d\n", (player->playerX + player->playerRect.w/2), (player->playerY + player->playerRect.h/2), levelHeight, levelWidth);
 }
 
 void renderPlayer(Player* player, SDL_Renderer* renderer) {
