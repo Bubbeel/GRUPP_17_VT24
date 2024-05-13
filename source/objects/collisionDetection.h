@@ -7,7 +7,20 @@
 #include "gridMap.h"
 #include "player.h"
 
-bool checkCollision(Player* player, SDL_Rect b);
+typedef enum
+{
+    noCollision,
+    topCollision,
+    botCollision,
+    leftCollision,
+    rightCollision,
+    topleftCollision,
+    toprightCollision,
+    botleftCollision,
+    botrightCollision
+}Collision;
+
+Collision checkCollision(Player* player, SDL_Rect b);
 void checkCollisionWall(Player* player, GridMap* map);
 
 #endif //collisionDetection_h

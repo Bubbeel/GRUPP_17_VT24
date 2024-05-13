@@ -118,6 +118,11 @@ void renderGridMap(SDL_Renderer *renderer, GridMap* map, int playerX, int player
                 }
                 SDL_Rect cellRect = { screenX, screenY, CELL_SIZE, CELL_SIZE };
                 SDL_RenderFillRect(renderer, &cellRect);
+                // map->cells[y][x].cellRect.x = screenX;
+                // map->cells[y][x].cellRect.y = screenY;
+                // map->cells[y][x].cellRect.w = CELL_SIZE;
+                // map->cells[y][x].cellRect.h = CELL_SIZE;
+                // SDL_RenderFillRect(renderer, &map->cells[y][x].cellRect);
             }
         }
     }
