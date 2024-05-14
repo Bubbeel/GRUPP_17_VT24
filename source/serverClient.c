@@ -16,6 +16,7 @@
 Server *createServer() {
     Server *pServer = malloc(sizeof(Server));
     *pServer = (Server){0};
+    SDL_Renderer *renderer;
      if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)!=0){
         printf("Error: %s\n",SDL_GetError());
         return 0;
@@ -45,8 +46,19 @@ Server *createServer() {
         SDLNet_Quit();
         return 0;
     }
+     for(int i = 0; i < MAX_CLIENTS; i++){
+        pServer->players[i] = malloc(sizeof(Player));
+        if (pServer->players[i] == NULL) {
+            fprintf(stderr, "Failed to allocate memory for player %d\n", i);
+            return 0;
+        }
+    }
     for(int i = 0; i < MAX_CLIENTS; i++){
-        pServer->players[i] = NULL;// Assuming createPlayer allocates memory
+        if (pServer->players[i] == NULL) {
+            fprintf(stderr, "Failed to allocate memory for player %d\n", i);
+            return 0;
+        }
+        pServer->players[i] = createPlayer(renderer);
     }
     pServer->nrOfPlayers=0;
     pServer->nrOfClients=0;
@@ -151,10 +163,11 @@ int waitForClients(Server *pServer) {
             printf("Client connected: %s:%d\n", SDLNet_ResolveIP(clientAddress), clientAddress->port);
 
             // Handle the new client connection
-            handleClientConnection(pServer, pServer->nrOfClients - 1, &gameObject);
+            handleClientConnection(pServer, pServer->nrOfClients - 1, gameObject);
             return 1;
         }
     }
+    return 0;
 }
 
 void add(IPaddress address, IPaddress clients[], Server *pServer){
@@ -214,7 +227,7 @@ Client *createClient() {
     }
     pClient->pPacket->address.host = ip.host;
     pClient->pPacket->address.port = ip.port;
-    for(int i = 0; i < MAX_CLIENTS; i++){
+    for(int i = 0; i < pServer->nrOfClients; i++){
         pClient->players[i] = createPlayer(gameObject.renderer); // Assuming createPlayer allocates memory
         if (!pClient->players[i]) {
             printf("Failed to create player for client %d\n", i);

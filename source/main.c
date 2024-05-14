@@ -54,14 +54,15 @@ int main(int argc, char **argv)
     }
 
     // Initialize game objects
-    Flag* flag = createFlag(pRenderer);
-    Player *pPlayer = createPlayer(pRenderer);
+    Flag* flag=malloc(sizeof(Flag));
+    Player *pPlayer=malloc(sizeof(Player));
+    
     GridMap map;
     SDL_Rect flagRect;
 
     // Set up variables
     bool closeWindow = false;
-    PlayerMovementData movementData;
+    PlayerMovementData *movementData=malloc(sizeof(PlayerMovementData));
     Server *pServer = NULL;
     Client *pClient = NULL;
     int numClients = 0;
@@ -121,7 +122,7 @@ int main(int argc, char **argv)
     }
     while (!closeWindow&&numClients>=1)
     {
-        handleEvents(&closeWindow, &movementData, pClient, pServer);
+        handleEvents(&closeWindow, movementData, pClient, pServer);
 
         // Update game data
         updateGame(pServer, pClient, pPlayer);
@@ -167,6 +168,7 @@ bool initSDL(SDL_Window **pWindow, SDL_Renderer **pRenderer)
     *pRenderer = SDL_CreateRenderer(*pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     GameObject *gameObject=malloc(sizeof(GameObject));
     gameObject->renderer = *pRenderer;
+    gameObject->tag = 'p';
     if (!(*pRenderer))
     {
         printf("Error: %s\n", SDL_GetError());
