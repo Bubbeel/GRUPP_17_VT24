@@ -8,34 +8,37 @@
 #include "../objects/common.h"
 
 typedef struct {
-    int clientId;
-    SDLNet_SocketSet set;
     UDPsocket udpSocket;
     UDPpacket *pPacket;
     Player *players[4];
+    int nrOfPlayers;
+    int playerNr;
 } Client;
 
 typedef struct {
     int clientId;
-    SDLNet_SocketSet set;
-    Client *clients;
+    int nrOfPlayers;
     UDPsocket udpSocket;
     UDPpacket *pPacket;
+    Player *players[4];
+    IPaddress clients[4];
+    int nrOfClients;
 }Server;
 
 
 Client *createClient();
-int receiveFromServer(Client *pClient, Player *player);
+int receiveFromServer(Client *pClient, Player *player, Server *pServer);
 void closeClient(Client *pClient);
-int sendDataUDP(Client *pClient, Player *player);
+int sendDataUDP(Client *pClient, Player *player, Server *pServer);
 
 Server *createServer();
 void handlePlayerMovementData(char *data, Client *client, int *pNumClients, Server *pServer);
-int listenForClientData(Server *pServer, Player *player);
+int listenForClientData(Server *pServer, Player *player, Client *pClient);
 void sendPlayerPosition(Client *pClient, PlayerMovementData *movementData, Server *pServer);
-int acceptClientConnections(Server *pServer, int *pNumClients, Client *pClient);
+void add(IPaddress address, IPaddress clients[], Server *pServer);
 void updateGame(Server *pServer, Client *pClient, Player *player);
+int waitForClients(Server *pServer);
+void handleClientConnection(Server *pServer, int clientIndex, GameObject *gameObject);
 
 
 #endif
-

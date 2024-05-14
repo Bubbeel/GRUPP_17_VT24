@@ -35,35 +35,36 @@ void renderOtherClients(SDL_Renderer* pRenderer, Client* clients, SDL_Texture* c
 
 int main(int argc, char **argv)
 {
+     // Initialize SDL
     SDL_Window *pWindow = NULL;
     SDL_Renderer *pRenderer = NULL;
     if (!initSDL(&pWindow, &pRenderer))
     {
         return 1;
     }
+
+    // Load textures
     SDL_Texture *pTexture1 = NULL;
     SDL_Texture *pTextureFlag = NULL;
     SDL_Texture *gridTexture = NULL;
-    PlayerMovementData movementData;
-    Server *pServer = createServer();
-    Client *pClient = createClient();
+    if (!loadResources(pRenderer, &pTexture1, &pTextureFlag))
+    {
+        closeSDL(pWindow, pRenderer);
+        return 1;
+    }
+
+    // Initialize game objects
     Flag* flag = createFlag(pRenderer);
     Player *pPlayer = createPlayer(pRenderer);
-    PlayerPackage *pPlayerPackage;
-    SDL_Rect flagRect;
-    SDL_Rect playerRect1;
     GridMap map;
+    SDL_Rect flagRect;
 
-    bool up1, down1, left1, right1;
+    // Set up variables
     bool closeWindow = false;
-    bool isServer = false;
-
-    int player1X = playerRect1.w;
-    int player1Y = playerRect1.h; 
-    int player1VelocityX = 0;
-    int player1VelocityY = 0;
-    int *pNumClients=malloc(sizeof(int));
-    *pNumClients=0;
+    PlayerMovementData movementData;
+    Server *pServer = NULL;
+    Client *pClient = NULL;
+    int numClients = 0;
     /*
     flagRect.w /= 5;
     flagRect.x = WINDOW_WIDTH / 2;
@@ -71,65 +72,62 @@ int main(int argc, char **argv)
     flag->flagX = flag->flagRect.x;
     flag->flagY = flag->flagRect.y;*/
 
- 
-    // Control if the first instance of the application is the server
+    // Load resources
 
     if (argc > 1 && strcmp(argv[1], "server") == 0)
     {
-        isServer = true;
-    }
-    // Load resources
-    if (!loadResources(pRenderer, &pTexture1, &pTextureFlag))
-    {
-        closeSDL(pWindow, pRenderer);
-        return 1;
-    }
-
-    // Create player based on whether it's server or client
-    if (isServer)
-    {
-        // For server, create and listen for connections
-        if (!pServer) {
-            printf("Failed to allocate memory for server\n");
+        // Create server instance
+        pServer = createServer();
+        if (!pServer)
+        {
+            printf("Failed to create server\n");
+            closeSDL(pWindow, pRenderer);
             return 1;
         }
-        if (SDLNet_UDP_AddSocket(pServer->set, pServer->udpSocket) == -1) {
-            fprintf(stderr, "SDLNet_UDP_AddSocket: %s\n", SDLNet_GetError());
-            SDLNet_FreePacket(pServer->pPacket);
-            SDLNet_UDP_Close(pServer->udpSocket);
-            SDLNet_Quit();
-            free(pServer);
-            return 1;
+
+        // Wait for clients to connect
+        while (numClients < MAX_CLIENTS)
+        {
+            int clientIndex = waitForClients(pServer);
+            if (clientIndex < 0)
+            {
+                printf("Failed to accept client.\n");
+                continue;
+            }
+
+            // Handle the client connection
+            GameObject gameObject; // Initialize this as needed
+            numClients++;
         }
     }
     else
     {
-        if(pClient == NULL){
-            printf("Failed to allocate memory for client\n");
+        // Create client instance
+        pClient = createClient();
+        if (!pClient)
+        {
+            printf("Failed to create client\n");
+            closeSDL(pWindow, pRenderer);
             return 1;
         }
-        (*pNumClients)++;
-        pClient->clientId = *pNumClients;
+
+        // Connect to server
+        if (!pClient)
+        {
+            printf("Failed to connect to server\n");
+            closeSDL(pWindow, pRenderer);
+            return 1;
+        }
     }
-    printf("numclients:%d\n", *pNumClients);
-
-    // Display menu and handle user choice
-    /*int menuChoice = displayMenu(pWindow, pRenderer);
-    if (menuChoice == 2) // If user chooses to quit from the menu
+    while (!closeWindow&&numClients>=1)
     {
-        closeWindow = true;
-    }*/
+        handleEvents(&closeWindow, &movementData, pClient, pServer);
 
-    // Main game loop
-    while (!closeWindow)
-    {
-        render(pRenderer, &map, gridTexture, pPlayer, pTexture1, flagRect, pTextureFlag, flag, pClient, pServer);
-
-        handleEvents(&closeWindow, &movementData, pClient, pServer);   
-
-        handlePlayerInput(&pPlayer->playerRect, &pPlayer->playerX, &pPlayer->playerY, &pPlayer->playervelocityX, &pPlayer->playervelocityY, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT, pPlayer->playerRect.w, pPlayer->playerRect.h, SPEED);
-
+        // Update game data
         updateGame(pServer, pClient, pPlayer);
+
+        // Render
+        render(pRenderer, &map, gridTexture, pPlayer, pTexture1, flagRect, pTextureFlag, flag, pClient, pServer);
 
     }
 
@@ -167,8 +165,8 @@ bool initSDL(SDL_Window **pWindow, SDL_Renderer **pRenderer)
         return false;
     }
     *pRenderer = SDL_CreateRenderer(*pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    GameObject gameObject;
-    gameObject.renderer = *pRenderer;
+    GameObject *gameObject=malloc(sizeof(GameObject));
+    gameObject->renderer = *pRenderer;
     if (!(*pRenderer))
     {
         printf("Error: %s\n", SDL_GetError());
@@ -221,7 +219,6 @@ bool loadResources(SDL_Renderer *pRenderer, SDL_Texture **pTexture1, SDL_Texture
     return true;
 }
 
-// Event Handling Function
 void handleEvents(bool *closeWindow, PlayerMovementData *movementData, Client *pClient, Server *pServer) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -267,7 +264,6 @@ void handleEvents(bool *closeWindow, PlayerMovementData *movementData, Client *p
     }
 }
 
-
 void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Player *pPlayer, SDL_Texture *pTexture1, SDL_Rect flagRect, SDL_Texture *pTextureFlag, Flag* flag, Client *pClient, Server *pServer)
 {
     int flagFrame=0;
@@ -307,4 +303,3 @@ void renderOtherClients(SDL_Renderer* pRenderer, Client* clients, SDL_Texture* c
         }
     }
 }
-

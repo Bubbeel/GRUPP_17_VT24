@@ -63,6 +63,8 @@
     "player.h": "c",
     "collisiondetection.h": "c",
     "map.h": "c",
-    "sdl_net.h": "c"
+    "sdl_net.h": "c",
+    "bitset": "c",
+    "serverclient.h": "c"
   }
 }

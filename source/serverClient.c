@@ -15,24 +15,27 @@
 
 Server *createServer() {
     Server *pServer = malloc(sizeof(Server));
-    if (!pServer) {
-        fprintf(stderr, "Error: Failed to allocate memory for server\n");
-        return NULL;
+    *pServer = (Server){0};
+     if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)!=0){
+        printf("Error: %s\n",SDL_GetError());
+        return 0;
     }
-    pServer->clients = malloc(4*sizeof(Client));
-
-    if (SDLNet_Init() < 0) {
-        fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
-        free(pServer);
-        return NULL;
+    if(TTF_Init()!=0){
+        printf("Error: %s\n",TTF_GetError());
+        SDL_Quit();
+        return 0;
     }
-
+    if (SDLNet_Init()){
+		fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
+        TTF_Quit();
+        SDL_Quit();
+		return 0;
+	}
     pServer->udpSocket = SDLNet_UDP_Open(UDPPORT);
     if (!pServer->udpSocket) {
         fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
         SDLNet_Quit();
-        free(pServer);
-        return NULL;
+        return 0;
     }
 
     pServer->pPacket = SDLNet_AllocPacket(512);
@@ -40,54 +43,14 @@ Server *createServer() {
         fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
         SDLNet_UDP_Close(pServer->udpSocket);
         SDLNet_Quit();
-        free(pServer);
-        return NULL;
+        return 0;
     }
-
-    pServer->set = SDLNet_AllocSocketSet(4);
-    if (!pServer->set) {
-        fprintf(stderr, "SDLNet_AllocSocketSet: %s\n", SDLNet_GetError());
-        SDLNet_FreePacket(pServer->pPacket);
-        SDLNet_UDP_Close(pServer->udpSocket);
-        SDLNet_Quit();
-        free(pServer);
-        return NULL;
+    for(int i = 0; i < MAX_CLIENTS; i++){
+        pServer->players[i] = NULL;// Assuming createPlayer allocates memory
     }
-
-    if (SDLNet_UDP_AddSocket(pServer->set, pServer->udpSocket) == -1) {
-        fprintf(stderr, "SDLNet_UDP_AddSocket: %s\n", SDLNet_GetError());
-        SDLNet_FreePacket(pServer->pPacket);
-        SDLNet_UDP_Close(pServer->udpSocket);
-        SDLNet_Quit();
-        free(pServer);
-        return NULL;
-    }
-
+    pServer->nrOfPlayers=0;
+    pServer->nrOfClients=0;
     return pServer;
-}
-
-int acceptClientConnections(Server *pServer, int *pNumClients, Client *pClient) {
-    UDPpacket *pPacket = SDLNet_AllocPacket(512);
-    while(1){
-        if (SDLNet_UDP_Recv(pServer->udpSocket, pPacket) > 0) {
-            // Add the newly connected client to the list of clients
-            if (*pNumClients < MAX_CLIENTS) {
-                // Allocate memory for the new client
-                pServer->clients[*pNumClients] = pServer->clients[*pNumClients];
-                pServer->clients[*pNumClients].udpSocket = pServer->udpSocket;
-                pServer->clients[*pNumClients].pPacket = pPacket;
-                (*pNumClients)++;
-                return 0; // Success
-            } else {
-                // If the maximum number of clients has been reached, reject the connection
-                fprintf(stderr, "Maximum number of clients reached\n");
-                return -1; // Error
-            }
-        } else {
-            fprintf(stderr, "Failed to receive data from client\n");
-            return -1; // Error
-        }
-    }
 }
 
 void closeServer(Server *pServer) {
@@ -98,91 +61,148 @@ void closeServer(Server *pServer) {
         if (pServer->pPacket) {
             SDLNet_FreePacket(pServer->pPacket);
         }
-        if (pServer->set) {
-            SDLNet_FreeSocketSet(pServer->set);
-        }
         SDLNet_Quit();
         free(pServer);
         free(pServer->clients);
     }
 }
 
-int listenForClientData(Server *pServer, Player *player) {
+int listenForClientData(Server *pServer, Player *player, Client *pClient) {
     if (pServer == NULL) {
         fprintf(stderr, "Error: Server is NULL\n");
         return -1;
     }
-    if (SDLNet_CheckSockets(pServer->set, 0) > 0 && SDLNet_SocketReady(pServer->udpSocket)) {
-        if (SDLNet_UDP_Recv(pServer->udpSocket, pServer->pPacket) > 0) {
-            PlayerPackage *pkg = (PlayerPackage *)pServer->pPacket->data;
-
-            // Update player position or state based on received data
-            player->playerX = pkg->x;
-            player->playerY = pkg->y;
-            player->direction = pkg->direction;
-
-            printf("Received player data from client %d: X=%d, Y=%d, Direction=%d\n", pkg->clientId, player->playerX, player->playerY, player->direction);
-        } else {
-            fprintf(stderr, "No data received from client\n");
+    // Check for incoming UDP packets
+    if (SDLNet_UDP_Recv(pServer->udpSocket, pServer->pPacket) > 0) {
+        // Extract the data from the received packet
+        PlayerPackage *pkg = (PlayerPackage *)pServer->pPacket->data;
+        for(int i=0; i<pServer->nrOfClients; i++){
+            pClient->players[i]->playerX = pkg->x;
+            pClient->players[i]->playerY = pkg->y;
+            pClient->players[i]->direction = pkg->direction;
         }
+        printf("Received player data from client %d: X=%d, Y=%d, Direction=%d\n", pkg->clientId, player->playerX, player->playerY, player->direction);
+    } else {
+        fprintf(stderr, "No data received from client\n");
     }
 
     return 1; 
 }
 
 void sendPlayerPosition(Client *pClient, PlayerMovementData *movementData, Server *pServer) {
-    Player *player = pClient->players[pClient->clientId];
-     if (pServer == NULL) {
+    if (pServer == NULL) {
         printf("Server is NULL\n");
     }
     if(pServer->pPacket == NULL){
         printf("packet is NULL\n");
     }
     PlayerPackage pkg;
-    pkg.clientId = pClient->clientId; // Set client ID accordingly
-    pkg.x = player->playerX;
-    pkg.y = player->playerY;
-    pkg.direction = player->direction;
+    for(int i=0; i<pServer->nrOfClients; i++){
+        pkg.clientId = pServer->clientId; // Set client ID accordingly
+        pkg.x = pClient->players[i]->playerX;
+        pkg.y = pClient->players[i]->playerY;
+        pkg.direction = pClient->players[i]->direction;
 
-    memcpy(pServer->pPacket->data, &pkg, sizeof(PlayerPackage));
-    pServer->pPacket->len = sizeof(PlayerPackage);
-
-    // Set packet destination here if necessary
+        memcpy(pServer->pPacket->data, &pkg, sizeof(PlayerPackage));
+        pServer->pPacket->len = sizeof(PlayerPackage);
+    }
 
     if (SDLNet_UDP_Send(pServer->udpSocket, 0, pServer->pPacket) == 0) {
         fprintf(stderr, "SDLNet_UDP_Send playerposition: %s\n", SDLNet_GetError());
     }
 }
 
+void handleClientConnection(Server *pServer, int clientIndex, GameObject *gameObject){
+    pServer->players[clientIndex] = createPlayer(gameObject->renderer);
+    if (!pServer->players[clientIndex]) {
+        printf("Failed to create player for client %d\n", clientIndex);
+        // Handle error
+    } else {
+        pServer->nrOfPlayers++;
+    }
+
+    // Send any initial data or messages to the client if needed
+    // Example: Send a welcome message
+    // sendMessageToClient(pServer, clientIndex, "Welcome to the server!");
+}
+
+int waitForClients(Server *pServer) {
+    GameObject *gameObject;
+    printf("Waiting for clients to connect...\n");
+
+    // Accept connections from clients until the maximum number of clients is reached
+    while (pServer->nrOfClients < MAX_CLIENTS) {
+        // Allocate memory for the client's address
+        IPaddress *clientAddress = malloc(sizeof(IPaddress));
+        if (!clientAddress) {
+            fprintf(stderr, "Failed to allocate memory for client address\n");
+            break;
+        }
+
+        // Wait for an incoming connection
+        if (SDLNet_UDP_Recv(pServer->udpSocket, pServer->pPacket) > 0) {
+            // Extract the sender's address from the received packet
+            *clientAddress = pServer->pPacket->address;
+
+            // Add the client's address to the server's list of clients
+            add(*clientAddress, pServer->clients, pServer);
+            pServer->nrOfClients++;
+
+            printf("Client connected: %s:%d\n", SDLNet_ResolveIP(clientAddress), clientAddress->port);
+
+            // Handle the new client connection
+            handleClientConnection(pServer, pServer->nrOfClients - 1, &gameObject);
+            return 1;
+        }
+    }
+}
+
+void add(IPaddress address, IPaddress clients[], Server *pServer){
+    for(int i=0; i<pServer->nrOfClients; i++){
+        if(address.host==clients[i].host && address.port==clients[i].port){
+            return;
+        }
+    }
+    clients[pServer->nrOfClients]=address;
+}
+
+
+//////////////////////////////////////////////CLIENT//////////////////////////////////////////////////////////
 Client *createClient() {
     GameObject gameObject;
     Client *pClient = malloc(sizeof(Client));
-    pClient->clientId = 0;
-    if (!pClient) {
-        fprintf(stderr, "Error: Failed to allocate memory for client\n");
-        return NULL;
+    Server *pServer;
+    *pClient = (Client){0};
+    if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)!=0){
+        printf("Error: %s\n",SDL_GetError());
+        return 0;
     }
 
-    if (SDLNet_Init() < 0) {
-        fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
-        free(pClient);
-        return NULL;
+    if(TTF_Init()!=0){
+        printf("Error: %s\n",TTF_GetError());
+        SDL_Quit();
+        return 0;
+    }
+    if (SDLNet_Init())
+	{
+		printf("SDLNet_Init: %s\n", SDLNet_GetError());
+        TTF_Quit();
+        SDL_Quit();
+		return 0;
+	}
+
+    pClient->udpSocket = SDLNet_UDP_Open(0);
+    if (!pClient->udpSocket) {
+        fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
+        SDLNet_Quit();
+        return 0;
     }
 
     IPaddress ip;
     if (SDLNet_ResolveHost(&ip, SERVER_IP, UDP_PORT) == -1) {
         fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
         SDLNet_Quit();
-        free(pClient);
-        return NULL;
-    }
-
-    pClient->udpSocket = SDLNet_UDP_Open(0);
-    if (!pClient->udpSocket) {
-        fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
-        SDLNet_Quit();
-        free(pClient);
-        return NULL;
+        return 0;
     }
 
     pClient->pPacket = SDLNet_AllocPacket(512);
@@ -190,37 +210,17 @@ Client *createClient() {
         fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
         SDLNet_UDP_Close(pClient->udpSocket);
         SDLNet_Quit();
-        free(pClient);
-        return NULL;
+        return 0;
     }
-
-    pClient->set = SDLNet_AllocSocketSet(1);
-    if (!pClient->set) {
-        fprintf(stderr, "SDLNet_AllocSocketSet: %s\n", SDLNet_GetError());
-        SDLNet_FreePacket(pClient->pPacket);
-        SDLNet_UDP_Close(pClient->udpSocket);
-        SDLNet_Quit();
-        free(pClient);
-        return NULL;
-    }
-    if (SDLNet_UDP_Bind(pClient->udpSocket, -1, &ip) == -1) {
-        fprintf(stderr, "SDLNet_UDP_Bind: %s\n", SDLNet_GetError());
-        SDLNet_FreePacket(pClient->pPacket);
-        SDLNet_UDP_Close(pClient->udpSocket);
-        SDLNet_Quit();
-        free(pClient);
-        return NULL;
-    }
-     for (int i = 0; i < MAX_CLIENTS; i++) {
+    pClient->pPacket->address.host = ip.host;
+    pClient->pPacket->address.port = ip.port;
+    for(int i = 0; i < MAX_CLIENTS; i++){
         pClient->players[i] = createPlayer(gameObject.renderer); // Assuming createPlayer allocates memory
         if (!pClient->players[i]) {
             printf("Failed to create player for client %d\n", i);
             // Handle error
         }
     }
-
-    SDLNet_UDP_AddSocket(pClient->set, pClient->udpSocket);
-
     return pClient;
 }
 
@@ -232,54 +232,51 @@ void closeClient(Client *pClient) {
         if (pClient->pPacket) {
             SDLNet_FreePacket(pClient->pPacket);
         }
-        if (pClient->set) {
-            SDLNet_FreeSocketSet(pClient->set);
-        }
         SDLNet_Quit();
         free(pClient);
     }
 }
 
-int sendDataUDP(Client *pClient, Player *player) {
+
+int sendDataUDP(Client *pClient, Player *player, Server *pServer) {
     PlayerPackage pkg;
-    pkg.clientId = pClient->clientId;
-    pkg.x = player->playerX;
-    pkg.y = player->playerY;
-    pkg.direction = player->direction;
+    for(int i=0; i<pServer->nrOfClients; i++){
+        pkg.x =  pClient->players[i]->playerX;
+        pkg.y =  pClient->players[i]->playerY;
+        pkg.direction =  pClient->players[i]->direction;
 
-    memcpy(pClient->pPacket->data, &pkg, sizeof(PlayerPackage));
-    pClient->pPacket->len = sizeof(PlayerPackage);
+        memcpy(pClient->pPacket->data, &pkg, sizeof(PlayerPackage));
+        pClient->pPacket->len = sizeof(PlayerPackage);
 
-    // Set packet destination here if necessary
+        // Set packet destination here if necessary
 
-    if (SDLNet_UDP_Send(pClient->udpSocket, 0, pClient->pPacket) == 0) {
-        fprintf(stderr, "SDLNet_UDP_Send client data: %s\n", SDLNet_GetError());
-        return 0; // Failed to send data
+        if (SDLNet_UDP_Send(pClient->udpSocket, 0, pClient->pPacket) == 0) {
+            fprintf(stderr, "SDLNet_UDP_Send client data: %s\n", SDLNet_GetError());
+            return 0; // Failed to send data
+        }
     }
 
     return 1; // Data sent successfully
 }
 
-int receiveFromServer(Client *pClient, Player *player) {
-    if (SDLNet_CheckSockets(pClient->set, 0) > 0 && SDLNet_SocketReady(pClient->udpSocket)) {
-        if (SDLNet_UDP_Recv(pClient->udpSocket, pClient->pPacket) > 0) {
-            PlayerPackage *pkg = (PlayerPackage *)pClient->pPacket->data;
+int receiveFromServer(Client *pClient, Player *player, Server *pServer) {
+    if (SDLNet_UDP_Recv(pClient->udpSocket, pClient->pPacket) > 0) {
+        PlayerPackage *pkg = (PlayerPackage *)pClient->pPacket->data;
 
-            player->playerX = pkg->x;
-            player->playerY = pkg->y;
-            player->direction = pkg->direction;
-
-            printf("Received player data: X=%d, Y=%d, Direction=%d\n", player->playerX, player->playerY, player->direction);
-        } else {
-            fprintf(stderr, "No data received from server\n");
+        for(int i=0; i<pServer->nrOfClients; i++){
+            pClient->players[i]->playerX = pkg->x;
+            pClient->players[i]->playerY = pkg->y;
+            pClient->players[i]->direction = pkg->direction;
         }
+        printf("Received player data from server: X=%d, Y=%d, Direction=%d\n", player->playerX, player->playerY, player->direction);
+    } else {
+        fprintf(stderr, "No data received from server\n");
     }
-
     return 1; 
 }
 
 void updateGame(Server *pServer, Client *pClient, Player *player) {
-    listenForClientData(pServer, player);
-    receiveFromServer(pClient, player);
-    sendDataUDP(pClient, player);
+    listenForClientData(pServer, player, pClient);
+    receiveFromServer(pClient, player, pServer);
+    sendDataUDP(pClient, player, pServer);
 }
