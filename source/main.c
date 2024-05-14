@@ -121,14 +121,11 @@ int main(int argc, char** argv) {
     int player2X = WINDOW_WIDTH - playerRect2.w;
     int player2Y = WINDOW_HEIGHT - playerRect2.h;
 
-    flag->flagRect.w /= 5;
     flag->flagRect.x = map->cells[20][20].cellRect.x;
     flag->flagRect.y = map->cells[20][20].cellRect.y;
     flag->flagX = flag->flagRect.x;
     flag->flagX = flag->flagRect.y;
 
-    int player1VelocityX = 0;
-    int player1VelocityY = 0;
     int player2VelocityX = 0;
     int player2VelocityY = 0;
 

@@ -27,6 +27,9 @@ Flag* createFlag(SDL_Renderer* renderer)
 
     // Initialize flag frames
     flag->flagFrames = 0;
+    flag->flagRect.w /= 5;
+    // flag->flagRect.x = map->cells[20][20].cellRect.x;
+    // flag->flagRect.y = map->cells[20][20].cellRect.y;
 
     return flag;
 }
