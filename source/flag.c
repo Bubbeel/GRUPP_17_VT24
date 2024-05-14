@@ -31,10 +31,15 @@ Flag* createFlag(SDL_Renderer* renderer)
 //Doesn't work currently, don't know why
 void flagAnimation(SDL_Renderer* renderer, Flag* flag)
 {
-    flag->flagFrames = 0;
-    SDL_Rect srcRect = { flag->flagFrames * flag->flagRect.w, 0, flag->flagRect.w, flag->flagRect.h };
+    const int NUM_FRAMES = 5;
+
+    int frameWidth = flag->flagRect.w / NUM_FRAMES;
+    
+    SDL_Rect srcRect = { flag->flagFrames * frameWidth, 0, frameWidth, flag->flagRect.h };
+    
     SDL_RenderCopy(renderer, flag->flagTexture, &srcRect, &flag->flagRect);
-    flag->flagFrames = (flag->flagFrames + 1) % 5;
+    
+    flag->flagFrames = (flag->flagFrames + 1) % NUM_FRAMES;
 }
 
 void destroyFlag(Flag* Flag) 
