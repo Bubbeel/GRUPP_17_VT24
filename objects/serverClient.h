@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "../objects/player.h"
 #include "../objects/common.h"
+#include "../objects/gridmap.h"
 
 typedef struct {
     UDPsocket udpSocket;
@@ -26,19 +27,18 @@ typedef struct {
 }Server;
 
 
-Client *createClient();
+Client *createClient(SDL_Renderer *pRenderer, GridMap *map);
 int receiveFromServer(Client *pClient, Player *player, Server *pServer);
 void closeClient(Client *pClient);
 int sendDataUDP(Client *pClient, Player *player, Server *pServer);
 
-Server *createServer();
+Server *createServer(SDL_Renderer *pRenderer, GridMap *map);
 void handlePlayerMovementData(char *data, Client *client, int *pNumClients, Server *pServer);
 int listenForClientData(Server *pServer, Player *player, Client *pClient);
 void sendPlayerPosition(Client *pClient, PlayerMovementData *movementData, Server *pServer);
 void add(IPaddress address, IPaddress clients[], Server *pServer);
-void updateGame(Server *pServer, Client *pClient, Player *player);
-int waitForClients(Server *pServer);
-void handleClientConnection(Server *pServer, int clientIndex, GameObject *gameObject);
+int waitForClients(Server *pServer, int clientIndex, SDL_Renderer *pRenderer, GridMap *map);
+void handleClientConnection(Server *pServer, int clientIndex, SDL_Renderer *pRenderer, GridMap *map);
 
 
 #endif

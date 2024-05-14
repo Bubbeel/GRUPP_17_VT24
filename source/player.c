@@ -1,13 +1,13 @@
 #include "../objects/player.h"
 #include <SDL2/SDL_image.h>
 
-//I recommend putting speed as a value that we put in player.speed in this function, and not define it in main.c
-//In theory if we want we can technically put #define SPEED 100 in player.c, but not in main.c
-Player* createPlayer(SDL_Renderer* renderer) {
+#define SPEED 300
+#define PLAYER_FRAME_RATE 60
+#define WINDOW_WIDTH 1408
+#define WINDOW_HEIGHT 800
+
+Player* createPlayer(SDL_Renderer* renderer, int startPosX, int startPoxY) {
     Player* pPlayer = malloc(sizeof(Player));
-    int speed = 100;
-    pPlayer->playerX = 0;
-    pPlayer->playerY = 0;
     if (!pPlayer) {
         return NULL;
     }
@@ -28,30 +28,39 @@ Player* createPlayer(SDL_Renderer* renderer) {
     SDL_QueryTexture(pPlayer->pPlayerTexture, NULL, NULL, &pPlayer->playerRect.w, &pPlayer->playerRect.h);
     pPlayer->playerRect.w /= 20;
     pPlayer->playerRect.h /= 20;
-    pPlayer->playerX = pPlayer->playerRect.w;
-    pPlayer->playerY = pPlayer->playerRect.h;
-    pPlayer->playervelocityX = 0;
-    pPlayer->playervelocityY = 0;
-    pPlayer->speed = speed;
-    pPlayer->playerId = 0;
+    pPlayer->playerX = startPosX;
+    pPlayer->playerY = startPoxY;
+    pPlayer->playerVelocityX = 0;
+    pPlayer->playerVelocityY = 0;
+    pPlayer->speed = SPEED;
+    pPlayer->camera.x = 0;
+    pPlayer->camera.y = 0;
+    pPlayer->camera.h = WINDOW_HEIGHT;
+    pPlayer->camera.w = WINDOW_WIDTH; 
 
     return pPlayer;
 }
 
-void handlePlayerInput(SDL_Rect *playerRect, int *playerX, int *playerY, int *playerVelocityX, int *playerVelocityY, int up, int down, int left, int right, int windowWidth, int windowHeight, int playerRectWidth, int playerRectHeight, int speed) {
-    *playerVelocityX = *playerVelocityY = 0;
-    if (up && !down) *playerVelocityY = -speed;
-    if (down && !up) *playerVelocityY = speed;
-    if (left && !right) *playerVelocityX = -speed;
-    if (right && !left) *playerVelocityX = speed;
-    *playerX += *playerVelocityX / 60;
-    *playerY += *playerVelocityY / 60;
-    if (*playerX < 0) *playerX = 0;
-    if (*playerY < 0) *playerY = 0;
-    if (*playerX > windowWidth - playerRectWidth) *playerX = windowWidth - playerRectWidth;
-    if (*playerY > windowHeight - playerRectHeight) *playerY = windowHeight - playerRectHeight;
-    playerRect->x = *playerX;
-    playerRect->y = *playerY;
+void handlePlayerInput(Player* player, int up, int down, int left, int right, int levelWidth, int levelHeight) 
+{
+    player->playerVelocityX = player->playerVelocityY = 0;
+    if (up && !down) player->playerVelocityY = -(player->speed);
+    if (down && !up) player->playerVelocityY = player->speed;
+    if (left && !right) player->playerVelocityX = -(player->speed);
+    if (right && !left) player->playerVelocityX = player->speed;
+    player->playerX += player->playerVelocityX / 60;
+    player->playerY += player->playerVelocityY / 60;
+
+    if ((player->playerX < 0) || (player->playerX + player->playerRect.w > levelWidth)) 
+    {
+        player->playerX -= (player->playerVelocityX / 60);
+    }
+    if ((player->playerY < 0) || (player->playerY + player->playerRect.h > levelHeight))
+    {
+        player->playerY -= (player->playerVelocityY / 60);
+    }
+    player->playerRect.x = player->playerX - player->camera.x;
+    player->playerRect.y = player->playerY - player->camera.y; 
 }
 
 void renderPlayer(Player* player, SDL_Renderer* renderer) {

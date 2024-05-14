@@ -4,6 +4,7 @@
 #include "../objects/client.h"
 #include "../objects/player.h"
 #include "../objects/common.h"
+#include "../objects/gridmap.h"
 
 
 #define PORT 3000
@@ -13,10 +14,9 @@
 #define UDP_PORT 3001
 
 
-Server *createServer() {
+Server *createServer(SDL_Renderer *pRenderer, GridMap *map) {
     Server *pServer = malloc(sizeof(Server));
-    *pServer = (Server){0};
-    SDL_Renderer *renderer = NULL;
+    SDL_Renderer *renderer;
      if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)!=0){
         printf("Error: %s\n",SDL_GetError());
         return 0;
@@ -46,22 +46,15 @@ Server *createServer() {
         SDLNet_Quit();
         return 0;
     }
-     for(int i = 0; i < MAX_CLIENTS; i++){
-        pServer->players[i] = malloc(sizeof(Player));
-        if (pServer->players[i] == NULL) {
-            fprintf(stderr, "Failed to allocate memory for player %d\n", i);
-            return 0;
-        }
-    }
-    for(int i = 0; i < MAX_CLIENTS; i++){
-        if (pServer->players[i] == NULL) {
-            fprintf(stderr, "Failed to allocate memory for player %d\n", i);
-            return 0;
-        }
-        pServer->players[i] = createPlayer(renderer);
-    }
-    pServer->nrOfPlayers=0;
+    pServer->nrOfPlayers=4;
     pServer->nrOfClients=0;
+    for(int i = 0; i < MAX_CLIENTS; i++){
+        pServer->players[i] = createPlayer(pRenderer, map->cells[5][5].cellRect.x, map->cells[5][5].cellRect.y);
+        if (pServer->players[i] == NULL) {
+            fprintf(stderr, "Failed to allocate memory for player %d\n", i);
+            return 0;
+        }
+    }
     return pServer;
 }
 
@@ -94,9 +87,8 @@ int listenForClientData(Server *pServer, Player *player, Client *pClient) {
         for(int i=0; i<pServer->nrOfClients; i++){
             pClient->players[i]->playerX = pkg->x;
             pClient->players[i]->playerY = pkg->y;
-            pClient->players[i]->direction = pkg->direction;
         }
-        printf("Received player data from client %d: X=%d, Y=%d, Direction=%d\n", pkg->clientId, player->playerX, player->playerY, player->direction);
+        printf("Received player data from client %d: X=%d, Y=%d\n", pkg->clientId, player->playerX, player->playerY);
     } else {
         fprintf(stderr, "No data received from client\n");
     }
@@ -116,7 +108,6 @@ void sendPlayerPosition(Client *pClient, PlayerMovementData *movementData, Serve
         pkg.clientId = pServer->clientId; // Set client ID accordingly
         pkg.x = pClient->players[i]->playerX;
         pkg.y = pClient->players[i]->playerY;
-        pkg.direction = pClient->players[i]->direction;
 
         memcpy(pServer->pPacket->data, &pkg, sizeof(PlayerPackage));
         pServer->pPacket->len = sizeof(PlayerPackage);
@@ -127,8 +118,8 @@ void sendPlayerPosition(Client *pClient, PlayerMovementData *movementData, Serve
     }
 }
 
-void handleClientConnection(Server *pServer, int clientIndex, GameObject *gameObject){
-    pServer->players[clientIndex] = createPlayer(gameObject->renderer);
+void handleClientConnection(Server *pServer, int clientIndex, SDL_Renderer *pRenderer, GridMap *map){
+    pServer->players[clientIndex] = createPlayer(pRenderer, map->cells[5][5].cellRect.x, map->cells[5][5].cellRect.y);
     if (!pServer->players[clientIndex]) {
         printf("Failed to create player for client %d\n", clientIndex);
         // Handle error
@@ -141,8 +132,7 @@ void handleClientConnection(Server *pServer, int clientIndex, GameObject *gameOb
     // sendMessageToClient(pServer, clientIndex, "Welcome to the server!");
 }
 
-int waitForClients(Server *pServer) {
-    GameObject *gameObject;
+int waitForClients(Server *pServer, int clientIndex, SDL_Renderer *pRenderer, GridMap *map) {
     printf("Waiting for clients to connect...\n");
 
     while (pServer->nrOfClients < MAX_CLIENTS) {
@@ -159,7 +149,7 @@ int waitForClients(Server *pServer) {
 
             printf("Client connected: %s:%d\n", SDLNet_ResolveIP(clientAddress), clientAddress->port);
 
-            handleClientConnection(pServer, pServer->nrOfClients - 1, gameObject);
+            handleClientConnection(pServer, clientIndex, pRenderer, map);
             free(clientAddress); // Free allocated memory for client address
             return 1;
         }
@@ -179,11 +169,13 @@ void add(IPaddress address, IPaddress clients[], Server *pServer){
 
 
 //////////////////////////////////////////////CLIENT//////////////////////////////////////////////////////////
-Client *createClient() {
-    GameObject gameObject = {0};
+Client *createClient(SDL_Renderer *pRenderer, GridMap *map) {
     Server *pServer = malloc(sizeof(Server));
     Client *pClient = malloc(sizeof(Client));
     *pClient = (Client){0};
+    pClient->nrOfPlayers=0;
+    pClient->playerNr=0;
+    
     if (!pServer || !pClient) {
         fprintf(stderr, "Failed to allocate memory for server or client\n");
         return NULL;
@@ -227,14 +219,25 @@ Client *createClient() {
         SDLNet_Quit();
         return 0;
     }
-    pClient->pPacket->address.host = ip.host;
-    pClient->pPacket->address.port = ip.port;
-    for(int i = 0; i < pServer->nrOfClients; i++){
-        pClient->players[i] = createPlayer(gameObject.renderer); // Assuming createPlayer allocates memory
+    printf("nr of clients: %d\n", pServer->nrOfClients+1);  
+    for(int i = 0; i < pServer->nrOfClients+1; i++){
+        pClient->players[i] = createPlayer(pRenderer, map->cells[5][5].cellRect.x, map->cells[5][5].cellRect.y); // Assuming createPlayer allocates memory
         if (!pClient->players[i]) {
             printf("Failed to create player for client %d\n", i);
             // Handle error
         }
+    }
+    pClient->pPacket->address.host = ip.host;
+    pClient->pPacket->address.port = ip.port;
+
+    const char *message = "Client connected!";
+    memcpy(pClient->pPacket->data, message, strlen(message) + 1);
+    pClient->pPacket->len = strlen(message) + 1;
+
+    // Send the packet
+    if (SDLNet_UDP_Send(pClient->udpSocket, 0, pClient->pPacket) == 0) {
+        fprintf(stderr, "SDLNet_UDP_Send packet: %s\n", SDLNet_GetError());
+        return 0;
     }
     return pClient;
 }
@@ -248,6 +251,10 @@ void closeClient(Client *pClient) {
             SDLNet_FreePacket(pClient->pPacket);
         }
         SDLNet_Quit();
+        for(int i = 0; i < MAX_CLIENTS; i++)
+        {
+            free(pClient->players[i]);
+        }
         free(pClient);
     }
 }
@@ -258,7 +265,6 @@ int sendDataUDP(Client *pClient, Player *player, Server *pServer) {
     for(int i=0; i<pServer->nrOfClients; i++){
         pkg.x =  pClient->players[i]->playerX;
         pkg.y =  pClient->players[i]->playerY;
-        pkg.direction =  pClient->players[i]->direction;
 
         memcpy(pClient->pPacket->data, &pkg, sizeof(PlayerPackage));
         pClient->pPacket->len = sizeof(PlayerPackage);
@@ -281,17 +287,10 @@ int receiveFromServer(Client *pClient, Player *player, Server *pServer) {
         for(int i=0; i<pServer->nrOfClients; i++){
             pClient->players[i]->playerX = pkg->x;
             pClient->players[i]->playerY = pkg->y;
-            pClient->players[i]->direction = pkg->direction;
         }
-        printf("Received player data from server: X=%d, Y=%d, Direction=%d\n", player->playerX, player->playerY, player->direction);
+        printf("Received player data from server: X=%d, Y=%d\n", player->playerX, player->playerY);
     } else {
         fprintf(stderr, "No data received from server\n");
     }
     return 1; 
-}
-
-void updateGame(Server *pServer, Client *pClient, Player *player) {
-    listenForClientData(pServer, player, pClient);
-    receiveFromServer(pClient, player, pServer);
-    sendDataUDP(pClient, player, pServer);
 }

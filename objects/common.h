@@ -7,7 +7,6 @@
 
 typedef struct{
     int x, y;
-    char direction;
     int clientId;
 }PlayerPackage;
 
@@ -26,10 +25,5 @@ typedef struct {
     bool left;
     bool right;
 } PlayerMovementData;
-
-typedef struct{
-    int playerNr;
-    Player players[4];
-} serverData;
 
 #endif

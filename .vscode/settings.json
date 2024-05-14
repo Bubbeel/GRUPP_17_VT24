@@ -65,6 +65,11 @@
     "map.h": "c",
     "sdl_net.h": "c",
     "bitset": "c",
-    "serverclient.h": "c"
+    "serverclient.h": "c",
+    "array": "c",
+    "span": "c",
+    "string": "c",
+    "string_view": "c",
+    "vector": "c"
   }
 }
