@@ -74,8 +74,11 @@ void closeServer(Server *pServer) {
             SDLNet_FreePacket(pServer->pPacket);
         }
         SDLNet_Quit();
+        for(int i = 0; i < MAX_CLIENTS; i++)
+        {
+            free(pServer->players[i]);
+        }
         free(pServer);
-        free(pServer->clients);
     }
 }
 
