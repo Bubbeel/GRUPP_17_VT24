@@ -54,11 +54,10 @@ int main(int argc, char **argv)
     }
 
     // Initialize game objects
-    Flag* flag=malloc(sizeof(Flag));
-    Player *pPlayer=malloc(sizeof(Player));
-    
+    Flag* flag = malloc(sizeof(Flag));
+    Player *pPlayer = malloc(sizeof(Player));
     GridMap map;
-    SDL_Rect flagRect;
+    SDL_Rect flagRect = {0}; 
 
     // Set up variables
     bool closeWindow = false;
@@ -100,6 +99,11 @@ int main(int argc, char **argv)
             GameObject gameObject; // Initialize this as needed
             numClients++;
         }
+        while(!closeWindow){
+            handleEvents(&closeWindow, movementData, pClient, pServer);
+            sendPlayerPosition(pClient, movementData, pServer);
+            listenForClientData(pServer, pPlayer, pClient);
+        }
     }
     else
     {
@@ -119,17 +123,17 @@ int main(int argc, char **argv)
             closeSDL(pWindow, pRenderer);
             return 1;
         }
-    }
-    while (!closeWindow&&numClients>=1)
-    {
-        handleEvents(&closeWindow, movementData, pClient, pServer);
+        while (!closeWindow&&numClients>=1)
+        {
+            handleEvents(&closeWindow, movementData, pClient, pServer);
 
-        // Update game data
-        updateGame(pServer, pClient, pPlayer);
+            sendDataUDP(pClient, pPlayer, pServer);
 
-        // Render
-        render(pRenderer, &map, gridTexture, pPlayer, pTexture1, flagRect, pTextureFlag, flag, pClient, pServer);
+            receiveFromServer(pClient, pPlayer, pServer);
 
+            render(pRenderer, &map, gridTexture, pPlayer, pTexture1, flagRect, pTextureFlag, flag, pClient, pServer);
+
+        }
     }
 
     // Cleanup resources

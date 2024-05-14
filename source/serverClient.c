@@ -16,7 +16,7 @@
 Server *createServer() {
     Server *pServer = malloc(sizeof(Server));
     *pServer = (Server){0};
-    SDL_Renderer *renderer;
+    SDL_Renderer *renderer = NULL;
      if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)!=0){
         printf("Error: %s\n",SDL_GetError());
         return 0;
@@ -145,30 +145,25 @@ int waitForClients(Server *pServer) {
     GameObject *gameObject;
     printf("Waiting for clients to connect...\n");
 
-    // Accept connections from clients until the maximum number of clients is reached
     while (pServer->nrOfClients < MAX_CLIENTS) {
-        // Allocate memory for the client's address
         IPaddress *clientAddress = malloc(sizeof(IPaddress));
         if (!clientAddress) {
             fprintf(stderr, "Failed to allocate memory for client address\n");
             break;
         }
 
-        // Wait for an incoming connection
         if (SDLNet_UDP_Recv(pServer->udpSocket, pServer->pPacket) > 0) {
-            // Extract the sender's address from the received packet
             *clientAddress = pServer->pPacket->address;
-
-            // Add the client's address to the server's list of clients
             add(*clientAddress, pServer->clients, pServer);
             pServer->nrOfClients++;
 
             printf("Client connected: %s:%d\n", SDLNet_ResolveIP(clientAddress), clientAddress->port);
 
-            // Handle the new client connection
             handleClientConnection(pServer, pServer->nrOfClients - 1, gameObject);
+            free(clientAddress); // Free allocated memory for client address
             return 1;
         }
+        free(clientAddress); // Free allocated memory for client address if no connection
     }
     return 0;
 }
@@ -185,10 +180,14 @@ void add(IPaddress address, IPaddress clients[], Server *pServer){
 
 //////////////////////////////////////////////CLIENT//////////////////////////////////////////////////////////
 Client *createClient() {
-    GameObject gameObject;
+    GameObject gameObject = {0};
+    Server *pServer = malloc(sizeof(Server));
     Client *pClient = malloc(sizeof(Client));
-    Server *pServer;
     *pClient = (Client){0};
+    if (!pServer || !pClient) {
+        fprintf(stderr, "Failed to allocate memory for server or client\n");
+        return NULL;
+    }
     if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)!=0){
         printf("Error: %s\n",SDL_GetError());
         return 0;
