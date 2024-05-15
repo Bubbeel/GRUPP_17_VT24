@@ -133,27 +133,22 @@ void handleClientConnection(Server *pServer, int clientIndex, SDL_Renderer *pRen
 
 int waitForClients(Server *pServer, int clientIndex, SDL_Renderer *pRenderer, GridMap *map) {
     printf("Waiting for clients to connect...\n");
-
-    while (pServer->nrOfClients < MAX_CLIENTS) {
-        IPaddress *clientAddress = malloc(sizeof(IPaddress));
-        if (!clientAddress) {
-            fprintf(stderr, "Failed to allocate memory for client address\n");
-            break;
-        }
-
-        if (SDLNet_UDP_Recv(pServer->udpSocket, pServer->pPacket) > 0) {
-            *clientAddress = pServer->pPacket->address;
-            add(*clientAddress, pServer->clients, pServer);
-            pServer->nrOfClients++;
-
-            printf("Client connected: %s:%d\n", SDLNet_ResolveIP(clientAddress), clientAddress->port);
-
-            handleClientConnection(pServer, clientIndex, pRenderer, map);
-            free(clientAddress); // Free allocated memory for client address
-            return 1;
-        }
-        free(clientAddress); // Free allocated memory for client address if no connection
+    IPaddress *clientAddress = malloc(sizeof(IPaddress));
+    if (!clientAddress) {
+        fprintf(stderr, "Failed to allocate memory for client address\n");
+        return 0;
     }
+
+    if (SDLNet_UDP_Recv(pServer->udpSocket, pServer->pPacket) > 0) {
+        *clientAddress = pServer->pPacket->address;
+        add(*clientAddress, pServer->clients, pServer);
+        printf("Client connected: %s:%d\n", SDLNet_ResolveIP(clientAddress), clientAddress->port);
+
+        handleClientConnection(pServer, clientIndex, pRenderer, map);
+        free(clientAddress); // Free allocated memory for client address
+        return 1;
+    }
+    free(clientAddress); // Free allocated memory for client address if no connection
     return 0;
 }
 
