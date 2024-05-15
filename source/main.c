@@ -8,14 +8,15 @@
 
 #include "../objects/player.h"
 #include "../objects/flag.h"
-#include "../objects/gridMap.h"
-#include "../objects/server.h"
-#include "../objects/client.h"
+#include "../objects/gridmap.h"
+#include "../objects/serverClient.h"
 #include "../objects/collisionDetection.h"
 #include "../objects/menu.h"
 #include "../objects/common.h"
 
-#define SPEED 100
+#define LEVEL_WIDTH 2816
+#define LEVEL_HEIGHT 2100
+
 #define WINDOW_WIDTH 1408
 #define WINDOW_HEIGHT 800
 
@@ -24,349 +25,206 @@
 
 #define CLOSE_DISTANCE_THRESHOLD 10
 #define FLAG_SPEED 2
-
-typedef struct
-{
-    SDL_Texture* texture;
-    SDL_Rect rect;
-    SDL_Surface surface;
-    char tag;
-} GameObject;
-
-bool initSDL(SDL_Window **pWindow, SDL_Renderer **pRenderer);
-void closeSDL(SDL_Window *pWindow, SDL_Renderer *pRenderer);
-bool loadResources(SDL_Renderer *pRenderer, SDL_Texture **pTexture1, SDL_Texture **pTextureFlag);
-void handleEvents(bool *closeWindow, bool *up1, bool *down1, bool *left1, bool *right1);
-void updateGame(SDL_Renderer* pRenderer, Player *pPlayer,PlayerPackage *pPlayerPackage, SDL_Rect *flagRect, Client *pClient);
-void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Player *pPlayer, SDL_Texture *pTexture1, SDL_Rect flagRect, SDL_Texture *pTextureFlag, Flag* flag, Client *pClient, Server *pServer);
-void cleanup(Player *pPlayer, SDL_Texture *pTexture1, SDL_Texture *pTextureFlag, SDL_Texture *gridTexture);
-void renderOtherClients(SDL_Renderer* pRenderer, Client* clients, int numClients, SDL_Texture* clientTexture, Server *pServer, Player *pPlayer);
+#define PLAYER_SPEED 2
+#define MAX_CLIENTS 4
 
 int main(int argc, char **argv)
 {
-    SDL_Window *pWindow = NULL;
-    SDL_Renderer *pRenderer = NULL;
-    if (!initSDL(&pWindow, &pRenderer))
-    {
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        printf("Error: %s\n", SDL_GetError());
         return 1;
     }
-    SDL_Texture *pTexture1 = NULL;
-    SDL_Texture *pTextureFlag = NULL;
-    SDL_Texture *gridTexture = NULL;
-    Client *pClient = createClient();
-    Server *pServer = createServer();
-    Player *pPlayer = createPlayer(pRenderer, SPEED);
+
+    SDL_Window* pWindow = SDL_CreateWindow("CTF Gaming", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+    if (!pWindow) {
+        printf("Error: %s\n", SDL_GetError());
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_Renderer* pRenderer = SDL_CreateRenderer(pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (!pRenderer) {
+        printf("Error: %s\n", SDL_GetError());
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;
+    }
+
+
+    GridMap* map = createGridMap();
+    loadMapFromFile("resources/map.txt", map);
+    SDL_Texture* gridTexture;
+    gridTexture = loadGridMap(pRenderer);
     Flag* flag = createFlag(pRenderer);
-    PlayerPackage *pPlayerPackage;
-    SDL_Rect flagRect;
-    SDL_Rect playerRect1;
-    GridMap map;
-
-    bool up1, down1, left1, right1;
+    Player *pPlayer = createPlayer(pRenderer, map->cells[5][5].cellRect.x, map->cells[5][5].cellRect.y);
+    if(!flag)
+    {
+        printf("Failed to create flag, Error: %s\n", SDL_GetError());
+        SDL_DestroyRenderer(pRenderer);
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;
+    }
+    // Set up variables
     bool closeWindow = false;
-    bool isServer = false;
+    PlayerMovementData *movementData=malloc(sizeof(PlayerMovementData));
+    Server pServer={0};
+    Client pClient={0};
+    int *numClients = malloc(sizeof(int));
+    *numClients = 0;
+    if (!pPlayer->playerSurface || !flag->flagSurface) {
+        printf("Error: %s\n", SDL_GetError());
+        SDL_DestroyRenderer(pRenderer);
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;
+    }
+    
+    SDL_Rect playerRect1;
 
-    int player1X = playerRect1.w;
-    int player1Y = playerRect1.h; 
-    int player1VelocityX = 0;
-    int player1VelocityY = 0;
-    /*flagRect.w /= 5;
-    flagRect.x = WINDOW_WIDTH / 2;
-    flagRect.y = WINDOW_HEIGHT / 2;
+    // playerRect2.w /= 20;
+    // playerRect2.h /= 20;
+
+    //Start positions
+    // int player1X = playerRect1.w;
+    // int player1Y = playerRect1.h; 
+
+    flag->flagRect.x = map->cells[20][20].cellRect.x;
+    flag->flagRect.y = map->cells[20][20].cellRect.y;
     flag->flagX = flag->flagRect.x;
-    flag->flagY = flag->flagRect.y;*/
+    flag->flagX = flag->flagRect.y;
 
- 
-    // Control if the first instance of the application is the server
+    movementData->up = false;  
+    movementData->down = false;
+    movementData->left = false;
+    movementData->right = false;
+
     if (argc > 1 && strcmp(argv[1], "server") == 0)
     {
-        isServer = true;
-    }
-
-    // Load resources
-    if (!loadResources(pRenderer, &pTexture1, &pTextureFlag))
-    {
-        closeSDL(pWindow, pRenderer);
-        return 1;
-    }
-
-    // Create player based on whether it's server or client
-    if (isServer)
-    {
-        // For server, create and listen for connections
-        if (pServer == NULL) {
-            printf("Failed to allocate memory for server\n");
-            return 1;
-        }
-        if (!pServer->serverSocket)
+        // Create server instance
+        if (!createServer(&pServer,pRenderer, map))
         {
             printf("Failed to create server\n");
-            closeSDL(pWindow, pRenderer);
+            SDL_Quit();
             return 1;
         }
 
-        if (acceptClientConnections(pServer) != 0)
+        // Wait for clients to connect
+        while (*numClients < MAX_CLIENTS)
         {
-            printf("Failed to accept client connections\n");
-            closeSDL(pWindow, pRenderer);
-            return 1;
-        }
+            int clientIndex = waitForClients(&pServer, *numClients, pRenderer, map);
+            if (clientIndex < 0)
+            {
+                printf("Failed to accept client.\n");
+                continue;
+            }
 
+            (*numClients)++;
+        }
+        while(!closeWindow){
+            sendPlayerPosition(&pClient, movementData, &pServer);
+            listenForClientData(&pServer, pPlayer, &pClient);
+        }
     }
     else
     {
-        // For client, connect to server
-        if(pClient == NULL){
-            printf("Failed to allocate memory for client\n");
-            return 1;
-        }
-        *pClient = *createClient();
-        pServer -> pNrOfClients++;
-        if (connectToServer(pClient) != 0)
+        if (!createClient(&pClient, pRenderer, map, *numClients))
         {
-            printf("Failed to connect to server\n");
-            closeClient(pClient);
-            closeSDL(pWindow, pRenderer);
+            printf("Failed to create client sdoifoisfo\n");
             return 1;
         }
-        // Create player for the client
-        pPlayer = createPlayer(pRenderer, SPEED);
-        if (!pPlayer)
+        
+        while (!closeWindow)
         {
-            printf("Failed to create player, Error: %s\n", SDL_GetError());
-            closeClient(pClient);
-            closeSDL(pWindow, pRenderer);
-            return 1;
+            SDL_Event event;
+            while (SDL_PollEvent(&event)) {
+                switch (event.type) {
+                    case SDL_QUIT:
+                        closeWindow = true;
+                        break;
+                    case SDL_KEYDOWN:
+                        switch (event.key.keysym.scancode) {
+                            case SDL_SCANCODE_W:
+                                movementData->up = true;
+                                break;
+                            case SDL_SCANCODE_A:
+                                movementData->left= true;
+                                break;
+                            case SDL_SCANCODE_S:
+                                movementData->down = true;
+                                break;
+                            case SDL_SCANCODE_D:
+                                movementData->right = true;
+                                break;
+                        }
+                        break;
+                    case SDL_KEYUP:
+                        switch (event.key.keysym.scancode) {
+                            case SDL_SCANCODE_UP:
+                                movementData->up= false;
+                                break;
+                            case SDL_SCANCODE_LEFT:
+                                movementData->left= false;
+                                break;
+                            case SDL_SCANCODE_DOWN:
+                                movementData->down = false;
+                                break;
+                            case SDL_SCANCODE_RIGHT:
+                                movementData->right= false;
+                                break;
+                        }
+                        break;
+                }
+                if (movementData->up || movementData->down || movementData->left || movementData->right) {
+                    sendDataUDP(&pClient, pPlayer, &pServer);
+                }
+            }
         }
+
+    SDL_RenderClear(pRenderer);
+    if (checkCollision(pPlayer, flag->flagRect))
+    {
+        flag->flagRect.x = pPlayer->playerX;
+        flag->flagRect.y = pPlayer->playerY;
     }
 
-    // Display menu and handle user choice
-    int menuChoice = displayMenu(pWindow, pRenderer);
-    if (menuChoice == 2) // If user chooses to quit from the menu
-    {
-        closeWindow = true;
-    }
+        // Collision Check with walls
+        checkCollisionWall(pPlayer, map);
 
-    // Main game loop
-    while (!closeWindow)
-    {
-        // Handle events
-        handleEvents(&closeWindow, &up1, &down1, &left1, &right1);
-        // Update game state
-        updateGame(pRenderer, pPlayer,  pPlayerPackage, &flagRect, pClient);
-        handlePlayerInput(&pPlayer->playerRect, &pPlayer->playerX, &pPlayer->playerY, &pPlayer->playervelocityX, &pPlayer->playervelocityY, up1, down1, left1, right1, WINDOW_WIDTH, WINDOW_HEIGHT, pPlayer->playerRect.w, pPlayer->playerRect.h, SPEED);
+        // Handle player input and movement for player 1
+        handlePlayerInput(pPlayer, movementData->up, movementData->down, movementData->left, movementData->right, LEVEL_WIDTH, LEVEL_HEIGHT);
 
-        // Render the game
-        render(pRenderer, &map, gridTexture, pPlayer,pTexture1, flagRect, pTextureFlag, flag, pClient, pServer);
-        if (isServer) {
-            listenForClientData(pServer, pClient, pPlayer); 
-            sendGameData(pServer, pClient, pPlayer);
-        }
-        else {
-            sendDataUDP(pClient, pPlayer);
+        // Handle player input and movement for player 2
+        //handlePlayerInput(&playerRect2, &player2X, &player2Y, &player2VelocityX, &player2VelocityY, up2, down2, left2, right2, LEVEL_WIDTH, LEVEL_HEIGHT, playerRect2.w, playerRect2.h, SPEED);
+
+        // Render players
+        //renderVisibleMap(pRenderer, map, pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT);
+        renderGridMapCentered(pRenderer, map, pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT, LEVEL_WIDTH, LEVEL_HEIGHT);
+        flagAnimation(pRenderer, flag);
+        for(int i=0; i<*numClients; i++){
+            renderPlayer(pPlayer,pRenderer);
         }
 
+        // Probably not needed here, but left it just in case I forget to use it :) - Konrad
+        getPlayerGridPosition(pPlayer->playerX, pPlayer->playerY, &pPlayer->playerGridX, &pPlayer->playerGridY, map);
+
+        // Present renderer
+        SDL_RenderPresent(pRenderer);
+
+        // Delay for frame rate control
+        SDL_Delay(1000 / PLAYER_FRAME_RATE);
     }
 
-    // Cleanup resources
-    cleanup(pPlayer, pTexture1, pTextureFlag, gridTexture);
-
-    // Close SDL
-    closeSDL(pWindow, pRenderer);
-
-    return 0;
-}
-
-
-// Initialization Functions
-bool initSDL(SDL_Window **pWindow, SDL_Renderer **pRenderer)
-{
-    if (SDL_Init(SDL_INIT_VIDEO) != 0)
-    {
-        printf("Error: %s\n", SDL_GetError());
-        return false;
-    }
-
-    *pWindow = SDL_CreateWindow("CTF Gaming", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
-    if (!(*pWindow))
-    {
-        printf("Error: %s\n", SDL_GetError());
-        SDL_Quit();
-        return false;
-    }
-
-    *pRenderer = SDL_CreateRenderer(*pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!(*pRenderer))
-    {
-        printf("Error: %s\n", SDL_GetError());
-        SDL_DestroyWindow(*pWindow);
-        SDL_Quit();
-        return false;
-    }
-
-    if (SDLNet_Init() == -1)
-    {
-        printf("SDLNet_Init: %s\n", SDLNet_GetError());
-        SDL_DestroyRenderer(*pRenderer);
-        SDL_DestroyWindow(*pWindow);
-        SDL_Quit();
-        return false;
-    }
-    return true;
-}
-
-void closeSDL(SDL_Window *pWindow, SDL_Renderer *pRenderer)
-{
+    destroyPlayer(pPlayer);
+    destroyFlag(flag);
+    destroyGridMap(map);
+    SDL_DestroyTexture(pPlayer->pPlayerTexture);
+    SDL_DestroyTexture(flag->flagTexture);
+    SDL_DestroyTexture(gridTexture);
     SDL_DestroyRenderer(pRenderer);
     SDL_DestroyWindow(pWindow);
+
+    printf("Adios amigos\n");
     SDL_Quit();
-}
-
-bool loadResources(SDL_Renderer *pRenderer, SDL_Texture **pTexture1, SDL_Texture **pTextureFlag)
-{
-    SDL_Surface *pSurface1 = IMG_Load("resources/player1.png");
-    SDL_Surface *pSurfaceFlag = IMG_Load("resources/flag.png");
-    if (!pSurface1 || !pSurfaceFlag)
-    {
-        printf("Error: %s\n", SDL_GetError());
-        return false;
-    }
-    *pTexture1 = SDL_CreateTextureFromSurface(pRenderer, pSurface1);
-    *pTextureFlag = SDL_CreateTextureFromSurface(pRenderer, pSurfaceFlag);
-    SDL_FreeSurface(pSurface1);
-    SDL_FreeSurface(pSurfaceFlag);
-    if (!(*pTexture1) || !(*pTextureFlag))
-    {
-        printf("Error: %s\n", SDL_GetError());
-        return false;
-    }
-    return true;
-}
-
-// Event Handling Function
-void handleEvents(bool *closeWindow, bool *up1, bool *down1, bool *left1, bool *right1)
-{
-    SDL_Event event;
-    while (SDL_PollEvent(&event))
-    {
-        switch (event.type)
-        {
-        case SDL_QUIT:
-            *closeWindow = true;
-            break;
-        case SDL_KEYDOWN:
-            switch (event.key.keysym.scancode)
-            {
-            case SDL_SCANCODE_W:
-                *up1 = true;
-                break;
-            case SDL_SCANCODE_A:
-                *left1 = true;
-                break;
-            case SDL_SCANCODE_S:
-                *down1 = true;
-                break;
-            case SDL_SCANCODE_D:
-                *right1 = true;
-                break;
-            }
-            break;
-        case SDL_KEYUP:
-            switch (event.key.keysym.scancode)
-            {
-            case SDL_SCANCODE_W:
-                *up1 = false;
-                break;
-            case SDL_SCANCODE_A:
-                *left1 = false;
-                break;
-            case SDL_SCANCODE_S:
-                *down1 = false;
-                break;
-            case SDL_SCANCODE_D:
-                *right1 = false;
-                break;
-            }
-            break;
-        }
-    }
-}
-void updateGame(SDL_Renderer* pRenderer, Player *pPlayer,PlayerPackage *pPlayerPackage, SDL_Rect *flagRect, Client *pClient){
-    pPlayer->playerX += pPlayer->playervelocityX / PLAYER_FRAME_RATE;
-    pPlayer->playerY += pPlayer->playervelocityY / PLAYER_FRAME_RATE;
-
-    flagRect->x += FLAG_SPEED;
-
-    PlayerPackage *pkg;
-
-    if (receiveFromServer(pClient, pPlayer) == 0)
-    {
-        pPlayer->playerX = pkg->x;
-        pPlayer->playerY = pkg->y;
-        pPlayer->direction = pkg->direction;
-        printf("Received player data: X=%d, Y=%d, Direction=%d\n", pPlayer->playerX, pPlayer->playerY, pPlayer->direction);
-    }
-    else
-    {
-        fprintf(stderr, "No data received from server\n");
-    }
-
-}
-
-// Rendering Function
-void render(SDL_Renderer *pRenderer, GridMap *map, SDL_Texture *gridTexture, Player *pPlayer, SDL_Texture *pTexture1, SDL_Rect flagRect, SDL_Texture *pTextureFlag, Flag* flag, Client *pClient, Server *pServer)
-{
-    // Render grid, players, flag, etc.
-    // You need to implement this function according to your rendering needs
-    // For demonstration purposes, here's a simple rendering logic:
-    int flagFrame=0;
-    // Clear renderer
-    SDL_RenderClear(pRenderer);
-
-    // Render grid map
-    renderGridMap(pRenderer, map, gridTexture);
-
-    // Render player
-    renderPlayer(pPlayer, pRenderer);
-
-    renderOtherClients(pRenderer, pClient,*pServer->pNrOfClients, pTexture1, pServer, pPlayer);
-     SDL_Rect srcRect = {flagFrame * flagRect.w, 0, flagRect.w, flagRect.h};
-    // Render flag
-    SDL_RenderCopy(pRenderer, pTextureFlag, NULL, &flag->flagRect);
-
-    moveFlag(&flagRect, pPlayer->playerX, pPlayer->playerY, CLOSE_DISTANCE_THRESHOLD, FLAG_SPEED);
-
-    flagFrame = (flagFrame + 1) % 5;
-    // Present renderer
-    SDL_RenderPresent(pRenderer);
-}
-
-// Cleanup Function
-void cleanup(Player *pPlayer, SDL_Texture *pTexture1, SDL_Texture *pTextureFlag, SDL_Texture *gridTexture)
-{
-    destroyPlayer(pPlayer);
-    SDL_DestroyTexture(pTexture1);
-    SDL_DestroyTexture(pTextureFlag);
-    SDL_DestroyTexture(gridTexture);
-}
-
-void renderOtherClients(SDL_Renderer* pRenderer, Client* clients, int numClients, SDL_Texture* clientTexture, Server *pServer, Player *pPlayer) {
-    printf("pRenderer: %p\n", pRenderer);
-    printf("clients: %p\n", clients);
-    printf("numClients: %d\n", numClients);
-    printf("clientTexture: %p\n", clientTexture);
-    printf("pServer: %p\n", pServer);
-    printf("pPlayer: %p\n", pPlayer);
-
-    for (int i = 0; i < numClients; i++) {
-        printf("Rendering client %d\n", i);
-        Client* client = &clients[i];
-
-        SDL_Rect clientRect;
-        clientRect.x = pPlayer->playerX;
-        clientRect.y = pPlayer->playerY;
-        SDL_QueryTexture(clientTexture, NULL, NULL, &clientRect.w, &clientRect.h);
-
-        SDL_RenderCopy(pRenderer, clientTexture, NULL, &clientRect);
-    }
+    return 0;
 }
