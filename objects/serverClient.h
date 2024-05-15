@@ -27,12 +27,12 @@ typedef struct {
 }Server;
 
 
-Client *createClient(SDL_Renderer *pRenderer, GridMap *map);
+Client *createClient(Client *pClient,SDL_Renderer *pRenderer, GridMap *map, int nrOfClients);
 int receiveFromServer(Client *pClient, Player *player, Server *pServer);
 void closeClient(Client *pClient);
 int sendDataUDP(Client *pClient, Player *player, Server *pServer);
 
-Server *createServer(SDL_Renderer *pRenderer, GridMap *map);
+Server *createServer(Server *pServer,SDL_Renderer *pRenderer, GridMap *map);
 void handlePlayerMovementData(char *data, Client *client, int *pNumClients, Server *pServer);
 int listenForClientData(Server *pServer, Player *player, Client *pClient);
 void sendPlayerPosition(Client *pClient, PlayerMovementData *movementData, Server *pServer);

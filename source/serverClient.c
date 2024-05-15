@@ -14,8 +14,7 @@
 #define UDP_PORT 3001
 
 
-Server *createServer(SDL_Renderer *pRenderer, GridMap *map) {
-    Server *pServer = malloc(sizeof(Server));
+Server *createServer(Server *pServer, SDL_Renderer *pRenderer, GridMap *map) {
     SDL_Renderer *renderer;
      if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)!=0){
         printf("Error: %s\n",SDL_GetError());
@@ -105,7 +104,7 @@ void sendPlayerPosition(Client *pClient, PlayerMovementData *movementData, Serve
     }
     PlayerPackage pkg;
     for(int i=0; i<pServer->nrOfClients; i++){
-        pkg.clientId = pServer->clientId; // Set client ID accordingly
+        pkg.clientId = pServer->clientId;
         pkg.x = pClient->players[i]->playerX;
         pkg.y = pClient->players[i]->playerY;
 
@@ -169,15 +168,12 @@ void add(IPaddress address, IPaddress clients[], Server *pServer){
 
 
 //////////////////////////////////////////////CLIENT//////////////////////////////////////////////////////////
-Client *createClient(SDL_Renderer *pRenderer, GridMap *map) {
-    Server *pServer = malloc(sizeof(Server));
-    Client *pClient = malloc(sizeof(Client));
-    *pClient = (Client){0};
+Client *createClient(Client *pClient,SDL_Renderer *pRenderer, GridMap *map, int nrOfClients) {
     pClient->nrOfPlayers=0;
     pClient->playerNr=0;
     
-    if (!pServer || !pClient) {
-        fprintf(stderr, "Failed to allocate memory for server or client\n");
+    if (!pClient) {
+        fprintf(stderr, "Failed to allocate memory for client\n");
         return NULL;
     }
     if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)!=0){
@@ -218,27 +214,15 @@ Client *createClient(SDL_Renderer *pRenderer, GridMap *map) {
         SDLNet_UDP_Close(pClient->udpSocket);
         SDLNet_Quit();
         return 0;
-    }
-    printf("nr of clients: %d\n", pServer->nrOfClients+1);  
-    for(int i = 0; i < pServer->nrOfClients+1; i++){
+    }  
+    for(int i = 0; i < nrOfClients; i++){
         pClient->players[i] = createPlayer(pRenderer, map->cells[5][5].cellRect.x, map->cells[5][5].cellRect.y); // Assuming createPlayer allocates memory
         if (!pClient->players[i]) {
             printf("Failed to create player for client %d\n", i);
-            // Handle error
         }
     }
     pClient->pPacket->address.host = ip.host;
     pClient->pPacket->address.port = ip.port;
-
-    const char *message = "Client connected!";
-    memcpy(pClient->pPacket->data, message, strlen(message) + 1);
-    pClient->pPacket->len = strlen(message) + 1;
-
-    // Send the packet
-    if (SDLNet_UDP_Send(pClient->udpSocket, 0, pClient->pPacket) == 0) {
-        fprintf(stderr, "SDLNet_UDP_Send packet: %s\n", SDLNet_GetError());
-        return 0;
-    }
     return pClient;
 }
 
@@ -262,21 +246,17 @@ void closeClient(Client *pClient) {
 
 int sendDataUDP(Client *pClient, Player *player, Server *pServer) {
     PlayerPackage pkg;
-    for(int i=0; i<pServer->nrOfClients; i++){
-        pkg.x =  pClient->players[i]->playerX;
-        pkg.y =  pClient->players[i]->playerY;
+    pkg.x = player->playerX;
+    pkg.y = player->playerY;
+    pkg.clientId = pClient->playerNr;
 
-        memcpy(pClient->pPacket->data, &pkg, sizeof(PlayerPackage));
-        pClient->pPacket->len = sizeof(PlayerPackage);
+    memcpy(pClient->pPacket->data, &pkg, sizeof(PlayerPackage));
+    pClient->pPacket->len = sizeof(PlayerPackage);
 
-        // Set packet destination here if necessary
-
-        if (SDLNet_UDP_Send(pClient->udpSocket, 0, pClient->pPacket) == 0) {
-            fprintf(stderr, "SDLNet_UDP_Send client data: %s\n", SDLNet_GetError());
-            return 0; // Failed to send data
-        }
+    if (SDLNet_UDP_Send(pClient->udpSocket, 0, pClient->pPacket) == 0) {
+        fprintf(stderr, "SDLNet_UDP_Send client data: %s\n", SDLNet_GetError());
+        return 0; // Failed to send data
     }
-
     return 1; // Data sent successfully
 }
 

@@ -67,8 +67,8 @@ int main(int argc, char **argv)
     // Set up variables
     bool closeWindow = false;
     PlayerMovementData *movementData=malloc(sizeof(PlayerMovementData));
-    Server *pServer = NULL;
-    Client *pClient = NULL;
+    Server pServer={0};
+    Client pClient={0};
     int *numClients = malloc(sizeof(int));
     *numClients = 0;
     if (!pPlayer->playerSurface || !flag->flagSurface) {
@@ -101,8 +101,7 @@ int main(int argc, char **argv)
     if (argc > 1 && strcmp(argv[1], "server") == 0)
     {
         // Create server instance
-        pServer = createServer(pRenderer, map);
-        if (!pServer)
+        if (!createServer(&pServer,pRenderer, map))
         {
             printf("Failed to create server\n");
             SDL_Quit();
@@ -112,7 +111,7 @@ int main(int argc, char **argv)
         // Wait for clients to connect
         while (*numClients < MAX_CLIENTS)
         {
-            int clientIndex = waitForClients(pServer, *numClients, pRenderer, map);
+            int clientIndex = waitForClients(&pServer, *numClients, pRenderer, map);
             if (clientIndex < 0)
             {
                 printf("Failed to accept client.\n");
@@ -122,24 +121,15 @@ int main(int argc, char **argv)
             (*numClients)++;
         }
         while(!closeWindow){
-            sendPlayerPosition(pClient, movementData, pServer);
-            listenForClientData(pServer, pPlayer, pClient);
+            sendPlayerPosition(&pClient, movementData, &pServer);
+            listenForClientData(&pServer, pPlayer, &pClient);
         }
     }
     else
     {
-        pClient = createClient(pRenderer, map);
-        if (!pClient)
+        if (!createClient(&pClient, pRenderer, map, *numClients))
         {
-            printf("Failed to create client\n");
-            return 1;
-        }
-
-        // Connect to server
-        
-        if (!pClient)
-        {
-            printf("Failed to connect to server\n");
+            printf("Failed to create client sdoifoisfo\n");
             return 1;
         }
         
@@ -183,6 +173,9 @@ int main(int argc, char **argv)
                                 break;
                         }
                         break;
+                }
+                if (movementData->up || movementData->down || movementData->left || movementData->right) {
+                    sendDataUDP(&pClient, pPlayer, &pServer);
                 }
             }
         }
