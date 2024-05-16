@@ -26,18 +26,19 @@ typedef struct {
     int nrOfClients;
 }Server;
 
-
-Client *createClient(Client *pClient,SDL_Renderer *pRenderer, GridMap *map, int nrOfClients);
-int receiveFromServer(Client *pClient, Player *player, Server *pServer);
+//CLIENT
+Client *createClient(Client *pClient, SDL_Renderer *pRenderer, GridMap *map);
+int receiveFromServer(Client *pClient, SDL_Renderer *pRenderer);
 void closeClient(Client *pClient);
-int sendDataUDP(Client *pClient, Player *player, Server *pServer);
+int sendDataUDP(Client *pClient, PlayerMovementData *movementData);
 
+//SERVER
 Server *createServer(Server *pServer,SDL_Renderer *pRenderer, GridMap *map);
 void handlePlayerMovementData(char *data, Client *client, int *pNumClients, Server *pServer);
-int listenForClientData(Server *pServer, Player *player, Client *pClient);
-void sendPlayerPosition(Client *pClient, PlayerMovementData *movementData, Server *pServer);
+void listenForClientData(Server *pServer, PlayerMovementData *movementData);
+void sendPlayerPositions(Server *pServer);
 void add(IPaddress address, IPaddress clients[], Server *pServer);
-int waitForClients(Server *pServer, int clientIndex, SDL_Renderer *pRenderer, GridMap *map);
+int waitForClients(Server *pServer, SDL_Renderer *pRenderer, GridMap *map);
 void handleClientConnection(Server *pServer, int clientIndex, SDL_Renderer *pRenderer, GridMap *map);
 
 

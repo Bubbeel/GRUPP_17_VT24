@@ -1,29 +1,25 @@
 #ifndef COMMON_H
 #define COMMON_H
-#include <stdbool.h>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
 #include "../objects/player.h"
 
-typedef struct{
+typedef struct {
     int x, y;
-    int clientId;
-}PlayerPackage;
+} PlayerPackage;
 
-typedef struct
-{
-    SDL_Texture* texture;
-    SDL_Rect rect;
-    SDL_Surface surface;
-    SDL_Renderer *renderer;
-    char tag;
-} GameObject;
+typedef enum {
+    MOVE_UP,
+    MOVE_DOWN,
+    MOVE_LEFT,
+    MOVE_RIGHT,
+    STOP_MOVE,
+} ClientCommand; 
 
 typedef struct {
-    bool up;
-    bool down;
-    bool left;
-    bool right;
+    ClientCommand command;
+    int playerNumber;
 } PlayerMovementData;
 
 #endif
