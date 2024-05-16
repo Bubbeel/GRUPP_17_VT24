@@ -79,7 +79,16 @@ int main(int argc, char **argv) {
             return 1;
         }
         pPlayer = pClient.players[pClient.playerNr];
+        if (!pPlayer) {
+            printf("Failed to initialize player\n");
+            SDL_DestroyRenderer(pRenderer);
+            SDL_DestroyWindow(pWindow);
+            SDL_Quit();
+            return 1;
+        }
     }
+
+    bool up = false, down = false, left = false, right = false;
 
     while (!closeWindow) {
         if (argc > 1 && strcmp(argv[1], "server") == 0) {
@@ -115,28 +124,46 @@ int main(int argc, char **argv) {
                     case SDL_KEYDOWN:
                         switch (event.key.keysym.scancode) {
                             case SDL_SCANCODE_W:
-                                movementData->command = MOVE_UP;
+                                up = true;
                                 break;
                             case SDL_SCANCODE_A:
-                                movementData->command = MOVE_LEFT;
+                                left = true;
                                 break;
                             case SDL_SCANCODE_S:
-                                movementData->command = MOVE_DOWN;
+                                down = true;
                                 break;
                             case SDL_SCANCODE_D:
-                                movementData->command = MOVE_RIGHT;
+                                right = true;
                                 break;
                         }
                         break;
                     case SDL_KEYUP:
-                        movementData->command = STOP_MOVE;
+                        switch (event.key.keysym.scancode) {
+                            case SDL_SCANCODE_W:
+                                up = false;
+                                break;
+                            case SDL_SCANCODE_A:
+                                left = false;
+                                break;
+                            case SDL_SCANCODE_S:
+                                down = false;
+                                break;
+                            case SDL_SCANCODE_D:
+                                right = false;
+                                break;
+                        }
                         break;
                 }
             }
+
             movementData->playerNumber = pClient.playerNr;
+            movementData->command = (up ? MOVE_UP : 0) | (down ? MOVE_DOWN : 0) | (left ? MOVE_LEFT : 0) | (right ? MOVE_RIGHT : 0);
             sendDataUDP(&pClient, movementData);
             receiveFromServer(&pClient, pRenderer);
-            pPlayer = pClient.players[pClient.playerNr]; // Ensure pPlayer is set
+            pPlayer = pClient.players[pClient.playerNr];
+            if (pPlayer) {
+                handlePlayerInput(pPlayer, up, down, left, right, LEVEL_WIDTH, LEVEL_HEIGHT);
+            }
         }
 
         SDL_RenderClear(pRenderer);
