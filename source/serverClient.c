@@ -16,6 +16,7 @@
 #define GRID_HEIGHT 66
 
 Server *createServer(Server *pServer, SDL_Renderer *pRenderer, GridMap *map) {
+    // Initialize SDL and SDL_net
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
         printf("Error: %s\n", SDL_GetError());
         return NULL;
@@ -31,12 +32,16 @@ Server *createServer(Server *pServer, SDL_Renderer *pRenderer, GridMap *map) {
         SDL_Quit();
         return NULL;
     }
+
+    // Open UDP socket
     pServer->udpSocket = SDLNet_UDP_Open(UDPPORT);
     if (!pServer->udpSocket) {
         fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
         SDLNet_Quit();
         return NULL;
     }
+
+    // Allocate packet for UDP communication
     pServer->pPacket = SDLNet_AllocPacket(512);
     if (!pServer->pPacket) {
         fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
@@ -44,6 +49,8 @@ Server *createServer(Server *pServer, SDL_Renderer *pRenderer, GridMap *map) {
         SDLNet_Quit();
         return NULL;
     }
+
+    // Initialize server data
     pServer->nrOfPlayers = 0;
     pServer->nrOfClients = 0;
     for (int i = 0; i < MAX_CLIENTS; i++) {
@@ -69,41 +76,33 @@ void closeServer(Server *pServer) {
         free(pServer);
     }
 }
-
 void listenForClientData(Server *pServer, PlayerMovementData *movementData) {
     if (pServer == NULL) {
         fprintf(stderr, "Error: Server is NULL\n");
         return;
     }
-    if (SDLNet_UDP_Recv(pServer->udpSocket, pServer->pPacket) > 0) {
-        memcpy(movementData, pServer->pPacket->data, sizeof(PlayerMovementData));
-        int clientId = movementData->playerNumber;
 
-        if (clientId >= 0 && clientId < MAX_CLIENTS) {
-            switch (movementData->command) {
-                case MOVE_UP:
-                    pServer->players[clientId]->playerY -= PLAYER_SPEED;
-                    break;
-                case MOVE_DOWN:
-                    pServer->players[clientId]->playerY += PLAYER_SPEED;
-                    break;
-                case MOVE_LEFT:
-                    pServer->players[clientId]->playerX -= PLAYER_SPEED;
-                    break;
-                case MOVE_RIGHT:
-                    pServer->players[clientId]->playerX += PLAYER_SPEED;
-                    break;
-                case STOP_MOVE:
-                    break;
-            }
-            printf("Received player command from client %d: %d\n", clientId, movementData->command);
+    for (int i = 0; i < pServer->nrOfClients; i++) {
+        PlayerPackage pkg;
+        memcpy(&pkg, pServer->pPacket->data, sizeof(PlayerPackage));
+        int clientId = pkg.playerNumber;
+
+        if (clientId >= 0 && clientId < MAX_CLIENTS && pServer->players[clientId] != NULL) {
+            Player *player = pServer->players[clientId];
+            player->playerX = pkg.x;
+            player->playerY = pkg.y;
+            player->playerVelocityX = pkg.velocityX;
+            player->playerVelocityY = pkg.velocityY;
+            player->camera.x = pkg.cameraX;
+            player->camera.y = pkg.cameraY;
+            printf("Received player command from client %d: X=%d, Y=%d, velocityX=%d, velocityY=%d\n", 
+                    clientId, player->playerX, player->playerY, player->playerVelocityX, player->playerVelocityY);
         } else {
-            fprintf(stderr, "Invalid client ID: %d\n", clientId);
+            fprintf(stderr, "Invalid client ID: %d or player does not exist\n", clientId);
         }
-    } else {
-        fprintf(stderr, "No data received from client\n");
     }
 }
+
 
 void sendPlayerPositions(Server *pServer) {
     if (pServer == NULL) {
@@ -114,15 +113,28 @@ void sendPlayerPositions(Server *pServer) {
         printf("Packet is NULL\n");
         return;
     }
-    PlayerPackage pkg[MAX_CLIENTS];
+
     for (int i = 0; i < pServer->nrOfClients; i++) {
-        printf("Sending player %d position: X=%d, Y=%d\n", i, pServer->players[i]->playerX, pServer->players[i]->playerY);
-        pkg[i].x = pServer->players[i]->playerX;
-        pkg[i].y = pServer->players[i]->playerY;
-        memcpy(pServer->pPacket->data + i * sizeof(PlayerPackage), &pkg[i], sizeof(PlayerPackage));
-    }
-    pServer->pPacket->len = pServer->nrOfClients * sizeof(PlayerPackage);
-    for (int i = 0; i < pServer->nrOfClients; i++) {
+        PlayerPackage pkg[MAX_CLIENTS];
+        for (int j = 0; j < MAX_CLIENTS; j++) {
+            if (pServer->players[j] != NULL) {
+                Player *player = pServer->players[j];
+                pkg[j].playerNumber = j;
+                pkg[j].x = player->playerX;
+                pkg[j].y = player->playerY;
+                pkg[j].velocityX = player->playerVelocityX;
+                pkg[j].velocityY = player->playerVelocityY;
+                pkg[j].width = player->playerRect.w;
+                pkg[j].height = player->playerRect.h;
+                pkg[j].cameraX = player->camera.x;
+                pkg[j].cameraY = player->camera.y;
+            } else {
+                pkg[j].playerNumber = -1; // Indicate no player
+            }
+        }
+
+        memcpy(pServer->pPacket->data, pkg, sizeof(pkg));
+        pServer->pPacket->len = sizeof(pkg);
         pServer->pPacket->address = pServer->clients[i];
         if (SDLNet_UDP_Send(pServer->udpSocket, -1, pServer->pPacket) == 0) {
             fprintf(stderr, "SDLNet_UDP_Send player positions: %s\n", SDLNet_GetError());
@@ -143,10 +155,6 @@ void handleClientConnection(Server *pServer, int clientIndex, SDL_Renderer *pRen
     if (!pServer->players[clientIndex]) {
         printf("Failed to create player for client %d\n", clientIndex);
     } else {
-        pServer->players[clientIndex]->playerX = map->cells[x][y].cellRect.x;
-        pServer->players[clientIndex]->playerY = map->cells[x][y].cellRect.y;
-        pServer->players[clientIndex]->playerRect.x = pServer->players[clientIndex]->playerX - pServer->players[clientIndex]->camera.x;
-        pServer->players[clientIndex]->playerRect.y = pServer->players[clientIndex]->playerY - pServer->players[clientIndex]->camera.y;
         printf("Player created for client %d at (%d, %d)\n", clientIndex, x, y);
         pServer->nrOfPlayers++;
     }
@@ -180,6 +188,7 @@ void add(IPaddress address, IPaddress clients[], Server *pServer) {
     clients[pServer->nrOfClients] = address;
     pServer->nrOfClients++;
 }
+
 
 Client *createClient(Client *pClient, SDL_Renderer *pRenderer, GridMap *map) {
     if (!pClient) {
@@ -234,6 +243,11 @@ Client *createClient(Client *pClient, SDL_Renderer *pRenderer, GridMap *map) {
     pClient->pPacket->address.host = ip.host;
     pClient->pPacket->address.port = ip.port;
 
+    // Initialize all players to NULL
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        pClient->players[i] = NULL;
+    }
+
     // Create the player's initial position
     pClient->players[pClient->playerNr] = createPlayer(pRenderer, map->cells[5][5].cellRect.x, map->cells[5][5].cellRect.y);
     if (!pClient->players[pClient->playerNr]) {
@@ -265,15 +279,36 @@ void closeClient(Client *pClient) {
     }
 }
 
-int sendDataUDP(Client *pClient, PlayerMovementData *movementData) {
-    memcpy(pClient->pPacket->data, movementData, sizeof(PlayerMovementData));
-    pClient->pPacket->len = sizeof(PlayerMovementData);
+int sendDataUDP(Client *pClient) {
+    if (!pClient) {
+        fprintf(stderr, "Client structure is NULL\n");
+        return 0;
+    }
+    Player *player = pClient->players[pClient->playerNr];
+    if (!player) {
+        fprintf(stderr, "Player data is NULL\n");
+        return 0;
+    }
+
+    PlayerPackage pkg;
+    pkg.playerNumber = pClient->playerNr; // Set the client ID
+    pkg.x = player->playerX;
+    pkg.y = player->playerY;
+    pkg.velocityX = player->playerVelocityX;
+    pkg.velocityY = player->playerVelocityY;
+    pkg.width = player->playerRect.w;
+    pkg.height = player->playerRect.h;
+    pkg.cameraX = player->camera.x;
+    pkg.cameraY = player->camera.y;
+
+    memcpy(pClient->pPacket->data, &pkg, sizeof(PlayerPackage));
+    pClient->pPacket->len = sizeof(PlayerPackage);
 
     if (SDLNet_UDP_Send(pClient->udpSocket, -1, pClient->pPacket) == 0) {
         fprintf(stderr, "SDLNet_UDP_Send client data: %s\n", SDLNet_GetError());
         return 0; // Failed to send data
     }
-    printf("Data sent to server\n");
+    printf("Data sent to server: X=%d, Y=%d, velocityX=%d, velocityY=%d\n", pkg.x, pkg.y, pkg.velocityX, pkg.velocityY);
     return 1; // Data sent successfully
 }
 
@@ -282,17 +317,22 @@ int receiveFromServer(Client *pClient, SDL_Renderer *pRenderer) {
         PlayerPackage *pkg = (PlayerPackage *)pClient->pPacket->data;
 
         for (int i = 0; i < MAX_CLIENTS; i++) {
-            if (pClient->players[i] == NULL) {
-                pClient->players[i] = createPlayer(pRenderer, pkg[i].x, pkg[i].y);
-            } else {
+            if (pkg[i].playerNumber != -1) { // Ensure valid player data
+                if (pClient->players[i] == NULL) {
+                    pClient->players[i] = createPlayer(pRenderer, pkg[i].x, pkg[i].y);
+                }
+                // Update player attributes
                 pClient->players[i]->playerX = pkg[i].x;
                 pClient->players[i]->playerY = pkg[i].y;
-                // Update playerRect after setting playerX and playerY
+                pClient->players[i]->playerVelocityX = pkg[i].velocityX;
+                pClient->players[i]->playerVelocityY = pkg[i].velocityY;
+                pClient->players[i]->playerRect.w = pkg[i].width;
+                pClient->players[i]->playerRect.h = pkg[i].height;
                 pClient->players[i]->playerRect.x = pClient->players[i]->playerX - pClient->players[i]->camera.x;
                 pClient->players[i]->playerRect.y = pClient->players[i]->playerY - pClient->players[i]->camera.y;
             }
         }
-        printf("Received player data from server: X=%d, Y=%d\n", pClient->players[pClient->playerNr]->playerX, pClient->players[pClient->playerNr]->playerY);
+        printf("Received player data from server\n");
     } else {
         fprintf(stderr, "No data received from server\n");
     }

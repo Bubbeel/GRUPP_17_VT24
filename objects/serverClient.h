@@ -30,7 +30,7 @@ typedef struct {
 Client *createClient(Client *pClient, SDL_Renderer *pRenderer, GridMap *map);
 int receiveFromServer(Client *pClient, SDL_Renderer *pRenderer);
 void closeClient(Client *pClient);
-int sendDataUDP(Client *pClient, PlayerMovementData *movementData);
+int sendDataUDP(Client *pClient);
 
 //SERVER
 Server *createServer(Server *pServer,SDL_Renderer *pRenderer, GridMap *map);
@@ -40,6 +40,7 @@ void sendPlayerPositions(Server *pServer);
 void add(IPaddress address, IPaddress clients[], Server *pServer);
 int waitForClients(Server *pServer, SDL_Renderer *pRenderer, GridMap *map);
 void handleClientConnection(Server *pServer, int clientIndex, SDL_Renderer *pRenderer, GridMap *map);
+void updatePlayerPosition(Player* player);
 
 
 #endif

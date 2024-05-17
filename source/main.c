@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     }
 
     bool closeWindow = false;
-    PlayerMovementData* movementData = malloc(sizeof(PlayerMovementData));
+    PlayerMovementData movementData;
     Server pServer = {0};
     Client pClient = {0};
     Player* pPlayer = NULL;
@@ -76,6 +76,9 @@ int main(int argc, char **argv) {
     } else {
         if (!createClient(&pClient, pRenderer, map)) {
             printf("Failed to create client\n");
+            SDL_DestroyRenderer(pRenderer);
+            SDL_DestroyWindow(pWindow);
+            SDL_Quit();
             return 1;
         }
         pPlayer = pClient.players[pClient.playerNr];
@@ -89,7 +92,7 @@ int main(int argc, char **argv) {
     }
 
     bool up = false, down = false, left = false, right = false;
-
+    
     while (!closeWindow) {
         if (argc > 1 && strcmp(argv[1], "server") == 0) {
             if (SDLNet_UDP_Recv(pServer.udpSocket, pServer.pPacket) > 0) {
@@ -110,8 +113,8 @@ int main(int argc, char **argv) {
                     printf("Client already connected or maximum number of clients reached\n");
                 }
             }
-            if (pServer.nrOfClients > 0) {
-                listenForClientData(&pServer, movementData);
+            if (pServer.nrOfClients > 1) {
+                listenForClientData(&pServer, &movementData);
                 sendPlayerPositions(&pServer);
             }
         } else {
@@ -156,37 +159,31 @@ int main(int argc, char **argv) {
                 }
             }
 
-            movementData->playerNumber = pClient.playerNr;
-            movementData->command = (up ? MOVE_UP : 0) | (down ? MOVE_DOWN : 0) | (left ? MOVE_LEFT : 0) | (right ? MOVE_RIGHT : 0);
-            sendDataUDP(&pClient, movementData);
-            receiveFromServer(&pClient, pRenderer);
-            pPlayer = pClient.players[pClient.playerNr];
-            if (pPlayer) {
-                handlePlayerInput(pPlayer, up, down, left, right, LEVEL_WIDTH, LEVEL_HEIGHT);
-            }
-        }
-
-        SDL_RenderClear(pRenderer);
-        if (pPlayer) {
-            renderGridMapCentered(pRenderer, map, pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT, LEVEL_WIDTH, LEVEL_HEIGHT);
-        }
-        flagAnimation(pRenderer, flag);
-        if (pPlayer) {
-            renderPlayer(pPlayer, pRenderer);
-        }
-        if (argc > 1 && strcmp(argv[1], "server") == 0) {
-            for (int i = 0; i < pServer.nrOfClients; i++) {
-                renderPlayer(pServer.players[i], pRenderer);
-            }
-        } else {
+            // Update player position locally
             for (int i = 0; i < MAX_CLIENTS; i++) {
-                if (pClient.players[i] && i != pClient.playerNr) {
+                if (pClient.players[i]) {
+                    handlePlayerInput(pClient.players[i], up, down, left, right, LEVEL_WIDTH, LEVEL_HEIGHT);
+                    sendDataUDP(&pClient);
+                }
+            }
+
+            // Receive updated positions from the server
+            receiveFromServer(&pClient, pRenderer);
+
+            // Render the player and other entities
+            SDL_RenderClear(pRenderer);
+            if (pPlayer) {
+                renderGridMapCentered(pRenderer, map, pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT, LEVEL_WIDTH, LEVEL_HEIGHT);
+            }
+            flagAnimation(pRenderer, flag);
+            for (int i = 0; i < MAX_CLIENTS; i++) {
+                if (pClient.players[i]) {
                     renderPlayer(pClient.players[i], pRenderer);
                 }
             }
+            SDL_RenderPresent(pRenderer);
+            SDL_Delay(1000 / PLAYER_FRAME_RATE);
         }
-        SDL_RenderPresent(pRenderer);
-        SDL_Delay(1000 / PLAYER_FRAME_RATE);
     }
 
     if (pPlayer) {

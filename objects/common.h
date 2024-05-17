@@ -7,7 +7,12 @@
 
 typedef struct {
     int x, y;
+    int velocityX, velocityY;
+    int width, height;
+    int cameraX, cameraY;
+    int playerNumber;
 } PlayerPackage;
+
 
 typedef enum {
     MOVE_UP,
@@ -19,7 +24,6 @@ typedef enum {
 
 typedef struct {
     ClientCommand command;
-    int playerNumber;
 } PlayerMovementData;
 
 #endif

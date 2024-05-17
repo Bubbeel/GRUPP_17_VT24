@@ -13,7 +13,7 @@ Player* createPlayer(SDL_Renderer* renderer, int startPosX, int startPosY) {
         return NULL;
     }
 
-    pPlayer->playerSurface = IMG_Load("resources/player1.png");
+    pPlayer->playerSurface = IMG_Load("resources/player1.png"); // Default texture
     if (!pPlayer->playerSurface) {
         free(pPlayer);
         return NULL;
@@ -46,29 +46,33 @@ Player* createPlayer(SDL_Renderer* renderer, int startPosX, int startPosY) {
 }
 
 
+
 void handlePlayerInput(Player* player, int up, int down, int left, int right, int levelWidth, int levelHeight) {
     player->playerVelocityX = player->playerVelocityY = 0;
-    if (up && !down) player->playerVelocityY = -(player->speed);
-    if (down && !up) player->playerVelocityY = player->speed;
-    if (left && !right) player->playerVelocityX = -(player->speed);
-    if (right && !left) player->playerVelocityX = player->speed;
 
-    player->playerX += player->playerVelocityX / 60;
-    player->playerY += player->playerVelocityY / 60;
-
-    // Boundary check
-    if ((player->playerX < 0) || (player->playerX + player->playerRect.w > levelWidth)) {
-        player->playerX -= (player->playerVelocityX / 60);
+    if (up && !down) {
+        player->playerVelocityY = -player->speed;
     }
-    if ((player->playerY < 0) || (player->playerY + player->playerRect.h > levelHeight)) {
-        player->playerY -= (player->playerVelocityY / 60);
+    if (down && !up) {
+        player->playerVelocityY = player->speed;
     }
+    if (left && !right) {
+        player->playerVelocityX = -player->speed;
+    }
+    if (right && !left){
+        player->playerVelocityX = player->speed;
+    } 
 
-    // Update playerRect
-    player->playerRect.x = player->playerX - player->camera.x;
-    player->playerRect.y = player->playerY - player->camera.y;
+    player->playerX += player->playerVelocityX / (float)PLAYER_FRAME_RATE;
+    player->playerY += player->playerVelocityY / (float)PLAYER_FRAME_RATE;
 
-    // Debug output
+    if (player->playerX + player->playerRect.w > levelWidth) player->playerX = levelWidth - player->playerRect.w;
+    if (player->playerY + player->playerRect.h > levelHeight) player->playerY = levelHeight - player->playerRect.h;
+
+    player->playerRect.x = (int)(player->playerX - player->camera.x);
+    player->playerRect.y = (int)(player->playerY - player->camera.y);
+
+    // Debug output to verify playerRect updates correctly
     printf("Player input handled: playerX=%d, playerY=%d, playerRect.x=%d, playerRect.y=%d, velocityX=%d, velocityY=%d\n",
            player->playerX, player->playerY, player->playerRect.x, player->playerRect.y, player->playerVelocityX, player->playerVelocityY);
 }
