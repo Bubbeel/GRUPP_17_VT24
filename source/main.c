@@ -95,6 +95,7 @@ int main(int argc, char **argv) {
     
     while (!closeWindow) {
         if (argc > 1 && strcmp(argv[1], "server") == 0) {
+            // Server-side logic
             if (SDLNet_UDP_Recv(pServer.udpSocket, pServer.pPacket) > 0) {
                 IPaddress clientAddress = pServer.pPacket->address;
                 bool clientExists = false;
@@ -113,11 +114,12 @@ int main(int argc, char **argv) {
                     printf("Client already connected or maximum number of clients reached\n");
                 }
             }
-            if (pServer.nrOfClients > 1) {
-                listenForClientData(&pServer, &movementData);
-                sendPlayerPositions(&pServer);
-            }
+            listenForClientData(&pServer, &movementData);
+            sendPlayerPositions(&pServer);
+            
+            
         } else {
+            // Client-side logic
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
                 switch (event.type) {
@@ -160,12 +162,10 @@ int main(int argc, char **argv) {
             }
 
             // Update player position locally
-            for (int i = 0; i < MAX_CLIENTS; i++) {
-                if (pClient.players[i]) {
-                    handlePlayerInput(pClient.players[i], up, down, left, right, LEVEL_WIDTH, LEVEL_HEIGHT);
-                    sendDataUDP(&pClient);
-                }
-            }
+            handlePlayerInput(pPlayer, up, down, left, right, LEVEL_WIDTH, LEVEL_HEIGHT);
+
+            // Send updated position to the server
+            sendDataUDP(&pClient);
 
             // Receive updated positions from the server
             receiveFromServer(&pClient, pRenderer);
@@ -185,6 +185,7 @@ int main(int argc, char **argv) {
             SDL_Delay(1000 / PLAYER_FRAME_RATE);
         }
     }
+
 
     if (pPlayer) {
         destroyPlayer(pPlayer);

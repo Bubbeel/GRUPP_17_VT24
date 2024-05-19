@@ -63,8 +63,8 @@ void handlePlayerInput(Player* player, int up, int down, int left, int right, in
         player->playerVelocityX = player->speed;
     } 
 
-    player->playerX += player->playerVelocityX / (float)PLAYER_FRAME_RATE;
-    player->playerY += player->playerVelocityY / (float)PLAYER_FRAME_RATE;
+    player->playerX += player->playerVelocityX;
+    player->playerY += player->playerVelocityY;
 
     if (player->playerX + player->playerRect.w > levelWidth) player->playerX = levelWidth - player->playerRect.w;
     if (player->playerY + player->playerRect.h > levelHeight) player->playerY = levelHeight - player->playerRect.h;
