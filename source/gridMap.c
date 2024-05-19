@@ -6,24 +6,22 @@
 #include "objects/collisionDetection.h"
 //#include "gameObject.h"
 
-GridMap* createGridMap()
-{
-    GridMap* gridMap = malloc(sizeof(GridMap));
-    if(!gridMap)
-    {
-        return NULL;
-    }
-    return gridMap;
-}
 //
 // Function to read map design from a textfile and initialize the GridMap
-void loadMapFromFile(const char* filename, GridMap* map)
+GridMap* loadMapFromFile(const char* filename)
 {
+    GridMap* map = malloc(sizeof(GridMap));
+    if(!map)
+    {
+        printf("Failed to allocate memory for the map\n");
+        return NULL;
+    }
+
     FILE* file = fopen(filename, "r");
     if (!file)
     {
         printf("Error opening file\n");
-        return;
+        return NULL;
     }
 
     for(int y = 0; y < GRID_HEIGHT; y++)
@@ -35,7 +33,7 @@ void loadMapFromFile(const char* filename, GridMap* map)
             {
                 printf("Error reading file \n");
                 fclose(file);
-                return;
+                return NULL;
             }
             map->cells[y][x].cellRect.x = x * CELL_SIZE;
             map->cells[y][x].cellRect.y = y * CELL_SIZE;
@@ -58,11 +56,12 @@ void loadMapFromFile(const char* filename, GridMap* map)
                 default:
                     printf("Unknown cell type in file \n");
                     fclose(file);
-                    return; 
+                    return NULL; 
             }
         }
     } 
     fclose(file);
+    return map;
 }
 
 //Loads grid map

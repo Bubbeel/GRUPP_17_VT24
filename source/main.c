@@ -12,8 +12,8 @@
 #define LEVEL_WIDTH 2816
 #define LEVEL_HEIGHT 2100
 
-#define WINDOW_WIDTH 1408
-#define WINDOW_HEIGHT 800
+#define WINDOW_WIDTH 800
+#define WINDOW_HEIGHT 600
 
 #define FLAG_FRAME_RATE 10
 #define PLAYER_FRAME_RATE 60
@@ -43,8 +43,8 @@ int main(int argc, char** argv) {
         return 1;
     }
     //create GridMap obj and initialize GridMap
-    GridMap* map = createGridMap();
-    loadMapFromFile("resources/map.txt", map);
+    //GridMap* map = createGridMap();
+    GridMap* map = loadMapFromFile("resources/map.txt");
     SDL_Texture* gridTexture;
     gridTexture = loadGridMap(pRenderer);
 

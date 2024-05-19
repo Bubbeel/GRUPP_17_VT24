@@ -51,7 +51,7 @@ typedef struct
 } GridMap;
 
 GridMap* createGridMap();
-void loadMapFromFile(const char* filename, GridMap* map);
+GridMap* loadMapFromFile(const char* filename);
 SDL_Texture* loadGridMap(SDL_Renderer *renderer);
 void renderVisibleMap(SDL_Renderer *renderer, GridMap *map, Player* player, int screenWidth, int screenHeight);
 void renderGridMap(SDL_Renderer *renderer, GridMap* map, int playerX, int playerY, int windowWidth, int windowHeight);
