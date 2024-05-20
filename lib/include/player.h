@@ -2,6 +2,7 @@
 #define PLAYER_H
 #include <stdbool.h>
 #include <SDL2/SDL.h>
+#include "playerData.h"
 
 typedef struct {
     SDL_Surface* playerSurface;
@@ -12,6 +13,7 @@ typedef struct {
     int playerVelocityX, playerVelocityY;
     int playerGridX, playerGridY; //used for getPlayerPosition and is saved here!!
     int speed;
+    int alive;
 } Player;
 
 struct GridMap;
@@ -19,6 +21,8 @@ struct GridMap;
 Player* createPlayer(SDL_Renderer* renderer, int startPosX, int startPoxY);
 void handlePlayerInput(Player* player, int up, int down, int left, int right, int levelWidth, int levelHeight);
 void renderPlayer(Player* player, SDL_Renderer* renderer);
+void getPlayerSendData(Player* player, PlayerData* playerData);
+void updatePlayerWithRecievedData(Player* player, PlayerData* playerData);
 void destroyPlayer(Player* player);
 
 #endif /* PLAYER_H */

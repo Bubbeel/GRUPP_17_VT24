@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <SDL2/SDL_net.h>
-#include "../objects/serverClient.h"
-#include "../objects/client.h"
-#include "../objects/player.h"
-#include "../objects/common.h"
-#include "../objects/gridmap.h"
+#include "serverClient.h"
+#include "client.h"
+#include "player.h"
+#include "common.h"
+#include "gridmap.h"
 
 #define PORT 3000
 #define UDPPORT 3001

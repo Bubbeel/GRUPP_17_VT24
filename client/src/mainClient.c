@@ -15,6 +15,7 @@ struct game{
     SDL_Renderer *pRenderer;
     Player* pPlayer[MAX_PLAYERS];
     int nr_of_players, playerNr;
+    GridMap* map;
     //Stars *pStars;
     //TTF_Font *pFont, *pScoreFont;
     //Text *pOverText, *pStartText, *pWaitingText;
@@ -108,14 +109,12 @@ int initiate(Game *pGame){
     pGame->pPacket->address.host = pGame->serverAddress.host;
     pGame->pPacket->address.port = pGame->serverAddress.port;
 
+    pGame->map = loadMapFromFile("../lib/resources/map.txt");
+
     for(int i=0;i<MAX_PLAYERS;i++)
         pGame->pPlayer[i] = createPlayer(pGame->pRenderer,40,10);
         printf("Player created\n");
     pGame->nr_of_players = MAX_PLAYERS;
-    // pGame->pStars = createStars(WINDOW_WIDTH*WINDOW_HEIGHT/10000,WINDOW_WIDTH,WINDOW_HEIGHT);
-    // pGame->pOverText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Game over",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
-    // pGame->pStartText = createText(pGame->pRenderer,238,168,65,pGame->pScoreFont,"Press space to join",WINDOW_WIDTH/2,WINDOW_HEIGHT/2+100);
-    // pGame->pWaitingText = createText(pGame->pRenderer,238,168,65,pGame->pScoreFont,"Waiting for server...",WINDOW_WIDTH/2,WINDOW_HEIGHT/2+100);
     for(int i=0;i<MAX_PLAYERS;i++){
         if(!pGame->pPlayer[i]){
             printf("Error: %s\n",SDL_GetError());
@@ -123,11 +122,6 @@ int initiate(Game *pGame){
             return 0;
         }
     }
-    // if(!pGame->pOverText || !pGame->pStartText || !pGame->pWaitingText){
-    //     printf("Error: %s\n",SDL_GetError());
-    //     close(pGame);
-    //     return 0;
-    // }
     pGame->state = START;
 
     
@@ -152,14 +146,18 @@ void run(Game *pGame){
                     if(event.type==SDL_QUIT) close_requested = 1;
                     else handleInput(pGame,&event);
                 }
+                //printf("my playernr: %d\n", pGame->playerNr);
                 for(int i=0;i<MAX_PLAYERS;i++)
                     //updateRocket(pGame->pPlayer[i]);
                 SDL_SetRenderDrawColor(pGame->pRenderer,0,0,0,255);
-                SDL_RenderClear(pGame->pRenderer);
+                SDL_RenderClear(pGame->pRenderer); 
                 SDL_SetRenderDrawColor(pGame->pRenderer,230,230,230,255);
+                renderGridMapCentered(pGame->pRenderer, pGame->map, pGame->pPlayer[pGame->playerNr], WINDOW_WIDTH, WINDOW_HEIGHT, LEVEL_WIDTH, LEVEL_HEIGHT);
                 //drawStars(pGame->pStars,pGame->pRenderer);
                 for(int i=0;i<MAX_PLAYERS;i++)
-                    //drawRocket(pGame->pPlayer[i]);
+                {
+                    renderPlayer(pGame->pPlayer[i], pGame->pRenderer);
+                }
                 SDL_RenderPresent(pGame->pRenderer);
                 
                 break;
@@ -198,13 +196,15 @@ void run(Game *pGame){
 }
 
 void updateWithServerData(Game *pGame){
-    printf("Updating with server data\n");
+    // printf("Updating with server data\n");
     ServerData sData;
     memcpy(&sData, pGame->pPacket->data, sizeof(ServerData));
     pGame->playerNr = sData.playerNr;
     pGame->state = sData.gState;
+    //We might need a function to get mapdata as well to update the map
     for(int i=0;i<MAX_PLAYERS;i++){
-        //updateRocketWithRecievedData(pGame->pPlayer[i],&(sData.players[i]));
+        updatePlayerWithRecievedData(pGame->pPlayer[i],&(sData.players[i]));
+        // printf("player %d, pos: %d, posy: %d\n", i, pGame->pPlayer[i]->playerX, pGame->pPlayer[i]->playerY);
     }
 }
 
@@ -216,7 +216,7 @@ void handleInput(Game *pGame,SDL_Event *pEvent){
             case SDL_SCANCODE_W:
             case SDL_SCANCODE_UP:
                 //accelerate(pGame->pPlayer[pGame->playerNr]);
-                cData.command = ACC;
+                cData.command = UP;
                 break;
             case SDL_SCANCODE_A:
             case SDL_SCANCODE_LEFT:
@@ -227,6 +227,11 @@ void handleInput(Game *pGame,SDL_Event *pEvent){
             case SDL_SCANCODE_RIGHT:
                 //turnRight(pGame->pPlayer[pGame->playerNr]);
                 cData.command = RIGHT;
+                break;
+            case SDL_SCANCODE_S:
+            case SDL_SCANCODE_DOWN:
+                //go down
+                cData.command = DOWN;
                 break;
             case SDL_SCANCODE_SPACE:
                 //fireRocket(pGame->pPlayer[pGame->playerNr]);
@@ -244,7 +249,12 @@ void close(Game *pGame){
     //if(pGame->pStars) destroyStars(pGame->pStars);
     if(pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if(pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
-
+    destroyGridMap(pGame->map);
+    for(int i=0;i<MAX_PLAYERS;i++)
+    {
+        destroyPlayer(pGame->pPlayer[i]);
+    }
+    
     // if(pGame->pWaitingText) destroyText(pGame->pWaitingText);
     // if(pGame->pOverText) destroyText(pGame->pOverText);
     // if(pGame->pStartText) destroyText(pGame->pStartText);   

@@ -3,12 +3,14 @@
 
 #define WINDOW_WIDTH 1408
 #define WINDOW_HEIGHT 800
+#define LEVEL_WIDTH 2816
+#define LEVEL_HEIGHT 2100
 #define MAX_PLAYERS 2
 
 enum gameState{START, ONGOING, GAME_OVER};
 typedef enum gameState GameState;
 
-enum clientCommand{READY, ACC, LEFT, RIGHT, FIRE};
+enum clientCommand{READY, UP, LEFT, RIGHT, DOWN, FIRE};
 typedef enum clientCommand ClientCommand;
 
 struct clientData{

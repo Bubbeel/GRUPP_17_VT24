@@ -1,13 +1,16 @@
-#ifndef GAME_H
+#ifndef GAMEDATA_H
 #define GAME_H
 
 //UNDER CONSTRUCTION TO BE IMPLEMENTED IN THE FUTURE
 
-#include <SDL2/SDL.h>
+//#define WINDOW_WIDTH 1408
+//#define WINDOW_HEIGHT 800
 
-#define WINDOW_WIDTH 1408
-#define WINDOW_HEIGHT 800
+struct playerData{
+    float x, y, vx, vy;
+    int angle, alive;
+    //BulletData bData;
+};
+typedef struct playerData PlayerData; 
 
-void runGame();
-
-#endif // GAME_H
+#endif // GAMEDATA_H

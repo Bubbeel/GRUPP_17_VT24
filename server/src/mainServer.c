@@ -108,7 +108,7 @@ int initiate(Game *pGame){
     for(int i=0;i<MAX_PLAYERS;i++)
     {
         // This needs a bit of work, look at createRocket function how it handles player spawn
-        pGame->pPlayer[i] = createPlayer(pGame->pRenderer, 40, 10);/*/createRocket(i,pGame->pRenderer,WINDOW_WIDTH,WINDOW_HEIGHT)*/
+        pGame->pPlayer[i] = createPlayer(pGame->pRenderer, 40 + (i*2), 40 + (i*2));/*/createRocket(i,pGame->pRenderer,WINDOW_WIDTH,WINDOW_HEIGHT)*/
         printf("Player %d created\n", i);
     }
     pGame->nr_of_players = MAX_PLAYERS;
@@ -166,12 +166,15 @@ void run(Game *pGame){
                         //     (pGame->nr_of_players)--;
                         //     if(pGame->nr_of_players<=1) pGame->state = GAME_OVER;
                         // } 
-                SDL_SetRenderDrawColor(pGame->pRenderer,0,0,0,255);
+                SDL_SetRenderDrawColor(pGame->pRenderer,255,0,0,255);
                 SDL_RenderClear(pGame->pRenderer);
                 SDL_SetRenderDrawColor(pGame->pRenderer,230,230,230,255);
                 //drawStars(pGame->pStars,pGame->pRenderer);
                 for(int i=0;i<MAX_PLAYERS;i++)
+                {
+                    renderPlayer(pGame->pPlayer[i], pGame->pRenderer);
                     // drawRocket(pGame->pPlayer[i]);
+                }
                 SDL_RenderPresent(pGame->pRenderer);
                 
                 break;
@@ -196,7 +199,7 @@ void run(Game *pGame){
                 }
                 else if(SDLNet_UDP_Recv(pGame->pSocket,pGame->pPacket)==0)
                 {
-                    printf("Cock %d\n", pGame->pSocket, pGame->pSocket);
+                    //printf("Listening for packets\n");
                 }
                 else if(SDLNet_UDP_Recv(pGame->pSocket,pGame->pPacket)==-1)
                 {
@@ -204,7 +207,7 @@ void run(Game *pGame){
                 }
                 else
                 {
-                    printf("What\n");
+                    printf("Lower than -1?\n");
                 }
                 break;
         }
@@ -221,11 +224,11 @@ void setUpGame(Game *pGame){
 void sendGameData(Game *pGame){
     pGame->sData.gState = pGame->state;
     for(int i=0;i<MAX_PLAYERS;i++){
-        printf("trying to send player data\n");
-        // getRocketSendData(pGame->pPlayer[i], &(pGame->sData.players[i]));
+        // printf("trying to send player data\n");
+        getPlayerSendData(pGame->pPlayer[i], &(pGame->sData.players[i]));
     }
     for(int i=0;i<MAX_PLAYERS;i++){
-        // printf("Whatever the fuck this is doing\n");
+        //printf("Whatever the fuck this is doing, %d\n", i);
         pGame->sData.playerNr = i;
         memcpy(pGame->pPacket->data, &(pGame->sData), sizeof(ServerData));
 		pGame->pPacket->len = sizeof(ServerData);

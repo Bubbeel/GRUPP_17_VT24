@@ -1,4 +1,5 @@
 #include "player.h"
+#include "playerData.h"
 #include <SDL2/SDL_image.h>
 
 #define SPEED 300
@@ -65,6 +66,30 @@ void handlePlayerInput(Player* player, int up, int down, int left, int right, in
 
 void renderPlayer(Player* player, SDL_Renderer* renderer) {
     SDL_RenderCopy(renderer, player->pPlayerTexture, NULL, &player->playerRect);
+    // if(!player->alive)
+    // {
+    //     return;
+    // }
+}
+
+void getPlayerSendData(Player* player, PlayerData* playerData)
+{
+    playerData->alive = player->alive;
+    playerData->vx = player->playerVelocityX;
+    playerData->vy = player->playerVelocityY;
+    playerData->x = player->playerX;
+    playerData->y = player->playerY;
+    //getBulletSendData(pRocket->pBullet,&(pRocketData->bData)); add this when bullet gets added to player
+}
+
+void updatePlayerWithRecievedData(Player* player, PlayerData* playerData)
+{
+    player->alive = playerData->alive;
+    player->playerVelocityX = playerData->vx;
+    player->playerVelocityY = playerData->vx;
+    player->playerX = playerData->x;
+    player->playerY = playerData->y;
+    //updateBulletWithRecievedData(pRocket->pBullet,&(pRocketData->bData)); add this when bullet gets added to player
 }
 
 void destroyPlayer(Player* player) {
