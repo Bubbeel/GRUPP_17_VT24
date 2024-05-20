@@ -34,11 +34,11 @@ void flagAnimation(SDL_Renderer* renderer, Flag* flag)
     const int NUM_FRAMES = 5;
 
     int frameWidth = flag->flagRect.w / NUM_FRAMES;
-    
+
     SDL_Rect srcRect = { flag->flagFrames * frameWidth, 0, frameWidth, flag->flagRect.h };
-    
+
     SDL_RenderCopy(renderer, flag->flagTexture, &srcRect, &flag->flagRect);
-    
+
     flag->flagFrames = (flag->flagFrames + 1) % NUM_FRAMES;
 }
 

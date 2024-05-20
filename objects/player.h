@@ -2,7 +2,7 @@
 #define PLAYER_H
 #include <stdbool.h>
 #include <SDL2/SDL.h>
-
+#pragma pack(push, 1)
 typedef struct {
     SDL_Surface* playerSurface;
     SDL_Texture* pPlayerTexture;
@@ -13,6 +13,7 @@ typedef struct {
     int playerGridX, playerGridY; //used for getPlayerPosition and is saved here!!
     int speed;
 } Player;
+#pragma pack(pop)
 
 struct GridMap;
 

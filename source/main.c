@@ -15,17 +15,22 @@
 
 #define LEVEL_WIDTH 2816
 #define LEVEL_HEIGHT 2100
-
 #define WINDOW_WIDTH 1408
 #define WINDOW_HEIGHT 800
-
 #define FLAG_FRAME_RATE 10
 #define PLAYER_FRAME_RATE 60
-
 #define CLOSE_DISTANCE_THRESHOLD 10
 #define FLAG_SPEED 2
 #define PLAYER_SPEED 2
 #define MAX_CLIENTS 4
+
+// Define a structure to store player input state
+typedef struct {
+    bool up;
+    bool down;
+    bool left;
+    bool right;
+} PlayerInputState;
 
 int main(int argc, char **argv) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -61,7 +66,7 @@ int main(int argc, char **argv) {
     }
 
     bool closeWindow = false;
-    PlayerMovementData movementData;
+    PlayerInputState inputState = {false, false, false, false};
     Server pServer = {0};
     Client pClient = {0};
     Player* pPlayer = NULL;
@@ -91,8 +96,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    bool up = false, down = false, left = false, right = false;
-    
     while (!closeWindow) {
         if (argc > 1 && strcmp(argv[1], "server") == 0) {
             // Server-side logic
@@ -114,10 +117,8 @@ int main(int argc, char **argv) {
                     printf("Client already connected or maximum number of clients reached\n");
                 }
             }
-            listenForClientData(&pServer, &movementData);
+            listenForClientData(&pServer, &inputState);
             sendPlayerPositions(&pServer);
-            
-            
         } else {
             // Client-side logic
             SDL_Event event;
@@ -129,40 +130,40 @@ int main(int argc, char **argv) {
                     case SDL_KEYDOWN:
                         switch (event.key.keysym.scancode) {
                             case SDL_SCANCODE_W:
-                                up = true;
+                                inputState.up = true;
                                 break;
                             case SDL_SCANCODE_A:
-                                left = true;
+                                inputState.left = true;
                                 break;
                             case SDL_SCANCODE_S:
-                                down = true;
+                                inputState.down = true;
                                 break;
                             case SDL_SCANCODE_D:
-                                right = true;
+                                inputState.right = true;
                                 break;
                         }
                         break;
                     case SDL_KEYUP:
                         switch (event.key.keysym.scancode) {
                             case SDL_SCANCODE_W:
-                                up = false;
+                                inputState.up = false;
                                 break;
                             case SDL_SCANCODE_A:
-                                left = false;
+                                inputState.left = false;
                                 break;
                             case SDL_SCANCODE_S:
-                                down = false;
+                                inputState.down = false;
                                 break;
                             case SDL_SCANCODE_D:
-                                right = false;
+                                inputState.right = false;
                                 break;
                         }
                         break;
                 }
             }
 
-            // Update player position locally
-            handlePlayerInput(pPlayer, up, down, left, right, LEVEL_WIDTH, LEVEL_HEIGHT);
+            // Update player position locally based on input state
+            handlePlayerInput(pPlayer, inputState.up, inputState.down, inputState.left, inputState.right, LEVEL_WIDTH, LEVEL_HEIGHT);
 
             // Send updated position to the server
             sendDataUDP(&pClient);
@@ -185,7 +186,6 @@ int main(int argc, char **argv) {
             SDL_Delay(1000 / PLAYER_FRAME_RATE);
         }
     }
-
 
     if (pPlayer) {
         destroyPlayer(pPlayer);

@@ -5,7 +5,9 @@
 #define PLAYER_FRAME_RATE 60
 #define WINDOW_WIDTH 1408
 #define WINDOW_HEIGHT 800
-#define PLAYER_SPEED 2
+#define PLAYER_SPEED 10
+
+
 
 Player* createPlayer(SDL_Renderer* renderer, int startPosX, int startPosY) {
     Player* pPlayer = malloc(sizeof(Player));
