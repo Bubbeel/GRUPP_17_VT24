@@ -35,7 +35,7 @@ int sendDataUDP(Client *pClient);
 //SERVER
 Server *createServer(Server *pServer,SDL_Renderer *pRenderer, GridMap *map);
 void handlePlayerMovementData(char *data, Client *client, int *pNumClients, Server *pServer);
-void listenForClientData(Server *pServer, PlayerMovementData *movementData);
+void listenForClientData(Server *pServer);
 void sendPlayerPositions(Server *pServer);
 void add(IPaddress address, IPaddress clients[], Server *pServer);
 int waitForClients(Server *pServer, SDL_Renderer *pRenderer, GridMap *map);

@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
                     printf("Client already connected or maximum number of clients reached\n");
                 }
             }
-            listenForClientData(&pServer, &inputState);
+            listenForClientData(&pServer);
             sendPlayerPositions(&pServer);
         } else {
             // Client-side logic

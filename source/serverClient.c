@@ -82,7 +82,7 @@ void closeServer(Server *pServer) {
 
 // Server-Side Changes
 
-void listenForClientData(Server *pServer, PlayerMovementData *movementData) {
+void listenForClientData(Server *pServer) {
     if (pServer == NULL) {
         fprintf(stderr, "Error: Server is NULL\n");
         return;
