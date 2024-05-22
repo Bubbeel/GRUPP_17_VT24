@@ -109,7 +109,7 @@ int initiate(Game *pGame){
     {
         // This needs a bit of work, look at createRocket function how it handles player spawn
         pGame->pPlayer[i] = createPlayer(pGame->pRenderer, 40 + (i*2), 40 + (i*2));/*/createRocket(i,pGame->pRenderer,WINDOW_WIDTH,WINDOW_HEIGHT)*/
-        printf("Player %d created\n", i);
+        printf("Player %d created, rectx: %d, recty: %d\n", i, pGame->pPlayer[i]->playerRect.x, pGame->pPlayer[i]->playerRect.y);
     }
     pGame->nr_of_players = MAX_PLAYERS;
 
@@ -190,6 +190,7 @@ void run(Game *pGame){
                 if(SDLNet_UDP_Recv(pGame->pSocket,pGame->pPacket)==1)
                 {
                     add(pGame->pPacket->address,pGame->clients,&(pGame->nrOfClients));
+                    //pGame.
                     if(pGame->nrOfClients==MAX_PLAYERS) 
                     {
                         printf("Max players reached\n");
@@ -224,8 +225,8 @@ void setUpGame(Game *pGame){
 void sendGameData(Game *pGame){
     pGame->sData.gState = pGame->state;
     for(int i=0;i<MAX_PLAYERS;i++){
-        // printf("trying to send player data\n");
         getPlayerSendData(pGame->pPlayer[i], &(pGame->sData.players[i]));
+        //printf("plnr: %d, plx: %d, plvx: %d, ply: %d, plvy: %d\n", pGame->pPlayer[i]->playerNumber, pGame->pPlayer[i]->playerX, pGame->pPlayer[i]->playerVelocityX, pGame->pPlayer[i]->playerY, pGame->pPlayer[i]->playerVelocityY);
     }
     for(int i=0;i<MAX_PLAYERS;i++){
         //printf("Whatever the fuck this is doing, %d\n", i);
@@ -233,6 +234,7 @@ void sendGameData(Game *pGame){
         memcpy(pGame->pPacket->data, &(pGame->sData), sizeof(ServerData));
 		pGame->pPacket->len = sizeof(ServerData);
         pGame->pPacket->address = pGame->clients[i];
+        //printf("%d, %d, %d, %d\n", pGame->sData.gState, pGame->sData.playerNr, pGame->sData.players->x, pGame->sData.players->y);
 		SDLNet_UDP_Send(pGame->pSocket,-1,pGame->pPacket);
     }
 }
@@ -244,6 +246,9 @@ void add(IPaddress address, IPaddress clients[],int *pNrOfClients){
 }
 
 void executeCommand(Game *pGame,ClientData cData){
+    printf("cdata: plx: %d, ply: %d\n", cData.x, cData.y);
+    pGame->pPlayer[cData.playerNumber]->playerX = cData.x;
+    pGame->pPlayer[cData.playerNumber]->playerY = cData.y;
     // switch (cData.command)
     // {
     //     case ACC:

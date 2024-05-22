@@ -31,9 +31,12 @@ Player* createPlayer(SDL_Renderer* renderer, int startPosX, int startPoxY) {
     pPlayer->playerRect.h /= 20;
     pPlayer->playerX = startPosX;
     pPlayer->playerY = startPoxY;
+    pPlayer->playerRect.x = pPlayer->playerX;
+    pPlayer->playerRect.y = pPlayer->playerY;
     pPlayer->playerVelocityX = 0;
     pPlayer->playerVelocityY = 0;
     pPlayer->speed = SPEED;
+    pPlayer->alive = 1;
     pPlayer->camera.x = 0;
     pPlayer->camera.y = 0;
     pPlayer->camera.h = WINDOW_HEIGHT;
@@ -42,13 +45,13 @@ Player* createPlayer(SDL_Renderer* renderer, int startPosX, int startPoxY) {
     return pPlayer;
 }
 
-void handlePlayerInput(Player* player, int up, int down, int left, int right, int levelWidth, int levelHeight) 
+void handlePlayerInput(Player* player, ClientData cData, int levelWidth, int levelHeight) 
 {
     player->playerVelocityX = player->playerVelocityY = 0;
-    if (up && !down) player->playerVelocityY = -(player->speed);
-    if (down && !up) player->playerVelocityY = player->speed;
-    if (left && !right) player->playerVelocityX = -(player->speed);
-    if (right && !left) player->playerVelocityX = player->speed;
+    if (cData.command.UP && !cData.command.DOWN) player->playerVelocityY = -(player->speed);
+    if (cData.command.DOWN && !cData.command.UP) player->playerVelocityY = player->speed;
+    if (cData.command.LEFT && !cData.command.RIGHT) player->playerVelocityX = -(player->speed);
+    if (cData.command.RIGHT && !cData.command.LEFT) player->playerVelocityX = player->speed;
     player->playerX += player->playerVelocityX / 60;
     player->playerY += player->playerVelocityY / 60;
 
@@ -65,6 +68,8 @@ void handlePlayerInput(Player* player, int up, int down, int left, int right, in
 }
 
 void renderPlayer(Player* player, SDL_Renderer* renderer) {
+    player->playerRect.x = player->playerX - player->camera.x;
+    player->playerRect.y = player->playerY - player->camera.y;
     SDL_RenderCopy(renderer, player->pPlayerTexture, NULL, &player->playerRect);
     // if(!player->alive)
     // {
@@ -89,6 +94,7 @@ void updatePlayerWithRecievedData(Player* player, PlayerData* playerData)
     player->playerVelocityY = playerData->vx;
     player->playerX = playerData->x;
     player->playerY = playerData->y;
+    //printf("plaryer nr: %d, player alive %d, player vx: %d, player vy: %d, playerx: %d, playery: %d\n", player->playerNumber, player->alive, player->playerVelocityX, player->playerVelocityY, player->playerX, player->playerY);
     //updateBulletWithRecievedData(pRocket->pBullet,&(pRocketData->bData)); add this when bullet gets added to player
 }
 

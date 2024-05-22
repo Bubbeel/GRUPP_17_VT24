@@ -6,13 +6,13 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
-#include "../objects/player.h"
-#include "../objects/flag.h"
-#include "../objects/gridmap.h"
-#include "../objects/serverClient.h"
-#include "../objects/collisionDetection.h"
-#include "../objects/menu.h"
-#include "../objects/common.h"
+#include "../lib/include/player.h"
+#include "../lib/include/flag.h"
+#include "../lib/include/gridmap.h"
+#include "../lib/include/serverClient.h"
+#include "../lib/include/collisionDetection.h"
+#include "../lib/include/menu.h"
+#include "../lib/include/common.h"
 
 #define LEVEL_WIDTH 2816
 #define LEVEL_HEIGHT 2100

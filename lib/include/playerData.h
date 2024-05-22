@@ -7,15 +7,20 @@
 #define LEVEL_HEIGHT 2100
 #define MAX_PLAYERS 2
 
+#include "player.h"
+
 enum gameState{START, ONGOING, GAME_OVER};
 typedef enum gameState GameState;
 
-enum clientCommand{READY, UP, LEFT, RIGHT, DOWN, FIRE};
-typedef enum clientCommand ClientCommand;
+struct clientCommand{
+    bool READY, UP, LEFT, RIGHT, DOWN, FIRE;
+    };
+typedef struct clientCommand ClientCommand;
 
 struct clientData{
     ClientCommand command;
     int playerNumber;
+    int x, y, vx, vy;
 };
 typedef struct clientData ClientData;
 

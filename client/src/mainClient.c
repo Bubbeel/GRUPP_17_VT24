@@ -153,10 +153,12 @@ void run(Game *pGame){
                 SDL_RenderClear(pGame->pRenderer); 
                 SDL_SetRenderDrawColor(pGame->pRenderer,230,230,230,255);
                 renderGridMapCentered(pGame->pRenderer, pGame->map, pGame->pPlayer[pGame->playerNr], WINDOW_WIDTH, WINDOW_HEIGHT, LEVEL_WIDTH, LEVEL_HEIGHT);
+                //printf("My playerNr: %d\n", pGame->playerNr);
                 //drawStars(pGame->pStars,pGame->pRenderer);
                 for(int i=0;i<MAX_PLAYERS;i++)
                 {
                     renderPlayer(pGame->pPlayer[i], pGame->pRenderer);
+                    //printf("playerNr: %d, posx: %d, posy: %d, rectx: %d, recty: %d\n",i, pGame->pPlayer[i]->playerX, pGame->pPlayer[i]->playerY, pGame->pPlayer[i]->playerRect.x, pGame->pPlayer[i]->playerRect.y);
                 }
                 SDL_RenderPresent(pGame->pRenderer);
                 
@@ -177,7 +179,7 @@ void run(Game *pGame){
                     if(event.type==SDL_QUIT) close_requested = 1;
                     else if(!joining && event.type==SDL_KEYDOWN && event.key.keysym.scancode==SDL_SCANCODE_SPACE){
                         joining = 1;
-                        cData.command=READY;
+                        //cData.command=READY;
                         cData.playerNumber=-1;
                         memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
 		                pGame->pPacket->len = sizeof(ClientData);
@@ -200,6 +202,7 @@ void updateWithServerData(Game *pGame){
     ServerData sData;
     memcpy(&sData, pGame->pPacket->data, sizeof(ServerData));
     pGame->playerNr = sData.playerNr;
+    pGame->pPlayer[pGame->playerNr]->playerNumber = pGame->playerNr;
     pGame->state = sData.gState;
     //We might need a function to get mapdata as well to update the map
     for(int i=0;i<MAX_PLAYERS;i++){
@@ -212,32 +215,42 @@ void handleInput(Game *pGame,SDL_Event *pEvent){
     if(pEvent->type == SDL_KEYDOWN){
         ClientData cData;
         cData.playerNumber = pGame->playerNr;
+        cData.command.DOWN = false;
+        cData.command.UP = false;
+        cData.command.RIGHT = false;
+        cData.command.LEFT = false;
         switch(pEvent->key.keysym.scancode){
             case SDL_SCANCODE_W:
             case SDL_SCANCODE_UP:
                 //accelerate(pGame->pPlayer[pGame->playerNr]);
-                cData.command = UP;
+                cData.command.UP = true;
                 break;
             case SDL_SCANCODE_A:
             case SDL_SCANCODE_LEFT:
                 //turnLeft(pGame->pPlayer[pGame->playerNr]);
-                cData.command = LEFT;
+                cData.command.LEFT = true;
                 break;
             case SDL_SCANCODE_D:
             case SDL_SCANCODE_RIGHT:
                 //turnRight(pGame->pPlayer[pGame->playerNr]);
-                cData.command = RIGHT;
+                cData.command.RIGHT = true;
                 break;
             case SDL_SCANCODE_S:
             case SDL_SCANCODE_DOWN:
                 //go down
-                cData.command = DOWN;
+                cData.command.DOWN = true;
                 break;
             case SDL_SCANCODE_SPACE:
                 //fireRocket(pGame->pPlayer[pGame->playerNr]);
-                cData.command = FIRE;
+                //cData.command = FIRE;
                 break;
         }
+        handlePlayerInput(pGame->pPlayer[pGame->playerNr], cData, LEVEL_WIDTH, LEVEL_HEIGHT);
+        //printf("px: %d, py: %d\n",  pGame->pPlayer[pGame->playerNr]->playerX,  pGame->pPlayer[pGame->playerNr]->playerY);
+        cData.x = pGame->pPlayer[pGame->playerNr]->playerX;
+        cData.y = pGame->pPlayer[pGame->playerNr]->playerY;
+        //printf("cdatax: %d, cdatay: %d", cData.x, cData.y);
+        cData.playerNumber = pGame->playerNr;
         memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
 		pGame->pPacket->len = sizeof(ClientData);
         SDLNet_UDP_Send(pGame->pSocket, -1,pGame->pPacket);

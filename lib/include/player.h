@@ -9,6 +9,7 @@ typedef struct {
     SDL_Texture* pPlayerTexture;
     SDL_Rect playerRect;
     SDL_Rect camera;
+    int playerNumber;
     int playerX, playerY;
     int playerVelocityX, playerVelocityY;
     int playerGridX, playerGridY; //used for getPlayerPosition and is saved here!!
@@ -19,7 +20,7 @@ typedef struct {
 struct GridMap;
 
 Player* createPlayer(SDL_Renderer* renderer, int startPosX, int startPoxY);
-void handlePlayerInput(Player* player, int up, int down, int left, int right, int levelWidth, int levelHeight);
+void handlePlayerInput(Player* player, ClientData cData, int levelWidth, int levelHeight);
 void renderPlayer(Player* player, SDL_Renderer* renderer);
 void getPlayerSendData(Player* player, PlayerData* playerData);
 void updatePlayerWithRecievedData(Player* player, PlayerData* playerData);
