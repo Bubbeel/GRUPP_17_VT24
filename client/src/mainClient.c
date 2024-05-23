@@ -157,7 +157,7 @@ void run(Game *pGame){
                 //drawStars(pGame->pStars,pGame->pRenderer);
                 for(int i=0;i<MAX_PLAYERS;i++)
                 {
-                    renderPlayer(pGame->pPlayer[i], pGame->pRenderer);
+                    renderPlayer(pGame->pPlayer[i], pGame->pRenderer, pGame->pPlayer[pGame->playerNr]);
                     //printf("playerNr: %d, posx: %d, posy: %d, rectx: %d, recty: %d\n",i, pGame->pPlayer[i]->playerX, pGame->pPlayer[i]->playerY, pGame->pPlayer[i]->playerRect.x, pGame->pPlayer[i]->playerRect.y);
                 }
                 SDL_RenderPresent(pGame->pRenderer);
@@ -245,7 +245,7 @@ void handleInput(Game *pGame,SDL_Event *pEvent){
                 //cData.command = FIRE;
                 break;
         }
-        handlePlayerInput(pGame->pPlayer[pGame->playerNr], cData, LEVEL_WIDTH, LEVEL_HEIGHT);
+        //handlePlayerInput(pGame->pPlayer[pGame->playerNr], cData, LEVEL_WIDTH, LEVEL_HEIGHT);
         //printf("px: %d, py: %d\n",  pGame->pPlayer[pGame->playerNr]->playerX,  pGame->pPlayer[pGame->playerNr]->playerY);
         cData.x = pGame->pPlayer[pGame->playerNr]->playerX;
         cData.y = pGame->pPlayer[pGame->playerNr]->playerY;

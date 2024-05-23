@@ -10,6 +10,7 @@
 #include "player.h"
 #include "gridmap.h"
 #include "playerData.h"
+#include "collisionDetection.h"
 
 struct game{
     SDL_Window *pWindow;
@@ -108,7 +109,7 @@ int initiate(Game *pGame){
     for(int i=0;i<MAX_PLAYERS;i++)
     {
         // This needs a bit of work, look at createRocket function how it handles player spawn
-        pGame->pPlayer[i] = createPlayer(pGame->pRenderer, 40 + (i*2), 40 + (i*2));/*/createRocket(i,pGame->pRenderer,WINDOW_WIDTH,WINDOW_HEIGHT)*/
+        pGame->pPlayer[i] = createPlayer(pGame->pRenderer, 80 + (i*10), 80 + (i*10));/*/createRocket(i,pGame->pRenderer,WINDOW_WIDTH,WINDOW_HEIGHT)*/
         printf("Player %d created, rectx: %d, recty: %d\n", i, pGame->pPlayer[i]->playerRect.x, pGame->pPlayer[i]->playerRect.y);
     }
     pGame->nr_of_players = MAX_PLAYERS;
@@ -150,6 +151,7 @@ void run(Game *pGame){
                 while(SDLNet_UDP_Recv(pGame->pSocket,pGame->pPacket)==1){
                     memcpy(&cData, pGame->pPacket->data, sizeof(ClientData));
                     executeCommand(pGame,cData);
+                    
                 }
                 if(SDL_PollEvent(&event)) if(event.type==SDL_QUIT) close_requested = 1;
                 for(int i=0;i<MAX_PLAYERS;i++)
@@ -172,7 +174,8 @@ void run(Game *pGame){
                 //drawStars(pGame->pStars,pGame->pRenderer);
                 for(int i=0;i<MAX_PLAYERS;i++)
                 {
-                    renderPlayer(pGame->pPlayer[i], pGame->pRenderer);
+                    renderPlayer(pGame->pPlayer[i], pGame->pRenderer, pGame->pPlayer[i]);
+                    checkCollisionWall(pGame->pPlayer[i], pGame->map);
                     // drawRocket(pGame->pPlayer[i]);
                 }
                 SDL_RenderPresent(pGame->pRenderer);
@@ -247,8 +250,9 @@ void add(IPaddress address, IPaddress clients[],int *pNrOfClients){
 
 void executeCommand(Game *pGame,ClientData cData){
     printf("cdata: plx: %d, ply: %d\n", cData.x, cData.y);
-    pGame->pPlayer[cData.playerNumber]->playerX = cData.x;
-    pGame->pPlayer[cData.playerNumber]->playerY = cData.y;
+    //pGame->pPlayer[cData.playerNumber]->playerX = cData.x;
+    //pGame->pPlayer[cData.playerNumber]->playerY = cData.y;
+    handlePlayerInput(pGame->pPlayer[cData.playerNumber],cData,LEVEL_WIDTH,LEVEL_HEIGHT);
     // switch (cData.command)
     // {
     //     case ACC:

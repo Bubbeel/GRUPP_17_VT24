@@ -67,9 +67,9 @@ void handlePlayerInput(Player* player, ClientData cData, int levelWidth, int lev
     player->playerRect.y = player->playerY - player->camera.y; 
 }
 
-void renderPlayer(Player* player, SDL_Renderer* renderer) {
-    player->playerRect.x = player->playerX - player->camera.x;
-    player->playerRect.y = player->playerY - player->camera.y;
+void renderPlayer(Player* player, SDL_Renderer* renderer, Player* playerCurr) {
+    player->playerRect.x = player->playerX - playerCurr->camera.x;
+    player->playerRect.y = player->playerY - playerCurr->camera.y;
     SDL_RenderCopy(renderer, player->pPlayerTexture, NULL, &player->playerRect);
     // if(!player->alive)
     // {
