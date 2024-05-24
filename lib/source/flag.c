@@ -1,45 +1,51 @@
-#include <SDL2/SDL_image.h>
+#include "playerData.h"
 #include "flag.h"
+#include "player.h"
 #include <math.h>
+#include <SDL2/SDL_image.h>
+#define WINDOW_WIDTH 1408
+#define WINDOW_HEIGHT 800
 
-Flag* createFlag(SDL_Renderer* renderer) 
+Flag* createFlag(SDL_Renderer* renderer,int startPosX, int startPoxY) 
 {
-    Flag* Flag = malloc(sizeof(Flag));
-    if (!Flag) 
+    Flag* flag = malloc(sizeof(flag));
+    if (!flag) 
     {
         return NULL;
     }
 
-    Flag->flagSurface = IMG_Load("resources/flag.png");
-    if (!Flag->flagSurface) {
-        free(Flag);
+    flag->flagSurface = IMG_Load("../lib/resources/flag.png");
+    if (!flag->flagSurface) {
+        free(flag);
         return NULL;
     }
 
-    Flag->flagTexture = SDL_CreateTextureFromSurface(renderer, Flag->flagSurface);
-    SDL_FreeSurface(Flag->flagSurface);
-    if (!Flag->flagTexture) {
-        free(Flag);
+    flag->flagTexture = SDL_CreateTextureFromSurface(renderer, flag->flagSurface);
+    SDL_FreeSurface(flag->flagSurface);
+    if (!flag->flagTexture) {
+        free(flag);
         return NULL;
     }
 
-    SDL_QueryTexture(Flag->flagTexture, NULL, NULL, &Flag->flagRect.w, &Flag->flagRect.h);
-
-    return Flag;
+    SDL_QueryTexture(flag->flagTexture, NULL, NULL, &flag->flagRect.w, &flag->flagRect.h);
+    flag->flagX = startPosX;
+    flag->flagY = startPoxY;
+    flag->flagRect.x = flag->flagX;
+    flag->flagRect.y = flag->flagY;
+    flag->flagFrames = 0;
+    flag->camera.x = 0;
+    flag->camera.y = 0;
+    flag->camera.h = WINDOW_HEIGHT;
+    flag->camera.w = WINDOW_WIDTH;
+    return flag;
 }
 
 //Doesn't work currently, don't know why
-void flagAnimation(SDL_Renderer* renderer, Flag* flag)
+void flagAnimation(Flag* flag, SDL_Renderer* renderer)
 {
-    const int NUM_FRAMES = 5;
-
-    int frameWidth = flag->flagRect.w / NUM_FRAMES;
-    
-    SDL_Rect srcRect = { flag->flagFrames * frameWidth, 0, frameWidth, flag->flagRect.h };
-    
-    SDL_RenderCopy(renderer, flag->flagTexture, &srcRect, &flag->flagRect);
-    
-    flag->flagFrames = (flag->flagFrames + 1) % NUM_FRAMES;
+    flag->flagRect.x = flag->flagX - flag->camera.x;
+    flag->flagRect.y = flag->flagY - flag->camera.y;
+    SDL_RenderCopy(renderer, flag->flagTexture, NULL, &flag->flagRect);
 }
 
 void destroyFlag(Flag* Flag) 
@@ -72,4 +78,14 @@ void moveFlag(SDL_Rect *flagRect, int player1X, int player1Y, int closeDistanceT
             flagRect->y -= flagSpeed;
         }
     }
+}
+
+void getFlagSendData(Flag* flag, FlagData* flagData) {
+    flagData->x = flag->flagX;
+    flagData->y = flag->flagY;
+}
+
+void updateFlagWithRecievedData(Flag* flag, FlagData* flagData) {
+    flag->flagX = flagData->x;
+    flag->flagY = flagData->x;
 }

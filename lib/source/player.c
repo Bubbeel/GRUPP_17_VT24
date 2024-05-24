@@ -1,6 +1,8 @@
 #include "player.h"
 #include "playerData.h"
 #include <SDL2/SDL_image.h>
+#include "flag.h"
+#include "playerData.h"
 
 #define SPEED 300
 #define PLAYER_FRAME_RATE 60
@@ -77,7 +79,7 @@ void renderPlayer(Player* player, SDL_Renderer* renderer, Player* playerCurr) {
     // }
 }
 
-void getPlayerSendData(Player* player, PlayerData* playerData)
+void getPlayerSendData(Player* player, PlayerData* playerData, Flag* flag)
 {
     playerData->alive = player->alive;
     playerData->vx = player->playerVelocityX;
@@ -85,9 +87,10 @@ void getPlayerSendData(Player* player, PlayerData* playerData)
     playerData->x = player->playerX;
     playerData->y = player->playerY;
     //getBulletSendData(pRocket->pBullet,&(pRocketData->bData)); add this when bullet gets added to player
+    getFlagSendData(flag, &playerData->flagData);
 }
 
-void updatePlayerWithRecievedData(Player* player, PlayerData* playerData)
+void updatePlayerWithRecievedData(Player* player, PlayerData* playerData, Flag* flag)
 {
     player->alive = playerData->alive;
     player->playerVelocityX = playerData->vx;
@@ -96,6 +99,7 @@ void updatePlayerWithRecievedData(Player* player, PlayerData* playerData)
     player->playerY = playerData->y;
     //printf("plaryer nr: %d, player alive %d, player vx: %d, player vy: %d, playerx: %d, playery: %d\n", player->playerNumber, player->alive, player->playerVelocityX, player->playerVelocityY, player->playerX, player->playerY);
     //updateBulletWithRecievedData(pRocket->pBullet,&(pRocketData->bData)); add this when bullet gets added to player
+    updateFlagWithRecievedData(flag, &playerData->flagData);
 }
 
 void destroyPlayer(Player* player) {

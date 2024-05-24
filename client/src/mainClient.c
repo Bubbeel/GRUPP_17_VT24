@@ -131,9 +131,21 @@ int initiate(Game *pGame){
     loadMapFromFile("../lib/resources/map.txt" , pGame->map);
     pGame->gridTexture = loadGridMap(pGame->pRenderer);
 
-    for(int i=0;i<MAX_PLAYERS;i++)
-        pGame->pPlayer[i] = createPlayer(pGame->pRenderer,40,10);
-        printf("Player created\n");
+    if(MAX_PLAYERS==2){
+        pGame->pPlayer[0] = createPlayer(pGame->pRenderer,160,160);
+        pGame->pPlayer[1] = createPlayer(pGame->pRenderer,LEVEL_WIDTH-160,LEVEL_HEIGHT-160);
+    }else if(MAX_PLAYERS==3){
+        pGame->pPlayer[0] = createPlayer(pGame->pRenderer,160,160);
+        pGame->pPlayer[1] = createPlayer(pGame->pRenderer,LEVEL_WIDTH-160,160);
+        pGame->pPlayer[2] = createPlayer(pGame->pRenderer,LEVEL_WIDTH-160,LEVEL_HEIGHT-160);
+    }else{
+        pGame->pPlayer[0] = createPlayer(pGame->pRenderer,160,160);
+        pGame->pPlayer[1] = createPlayer(pGame->pRenderer,LEVEL_WIDTH-160,160);
+        pGame->pPlayer[2] = createPlayer(pGame->pRenderer,LEVEL_WIDTH-160,LEVEL_HEIGHT-160);
+        pGame->pPlayer[3] = createPlayer(pGame->pRenderer,160,LEVEL_HEIGHT-160);
+    }
+
+    pGame->flag = createFlag(pGame->pRenderer, 160, 160);
     pGame->nr_of_players = MAX_PLAYERS;
 
     for(int i=0;i<MAX_PLAYERS;i++){
@@ -143,6 +155,12 @@ int initiate(Game *pGame){
             return 0;
         }
     }
+
+    if(!pGame->flag){
+        printf("error creating flag\n");
+        close(pGame);
+    }
+
     pGame->state = START;
 
     
@@ -176,6 +194,7 @@ void run(Game *pGame){
                 renderGridMapCentered(pGame->pRenderer, pGame->map, pGame->gridTexture, pGame->pPlayer[pGame->playerNr], WINDOW_WIDTH, WINDOW_HEIGHT, LEVEL_WIDTH, LEVEL_HEIGHT);
                 //printf("My playerNr: %d\n", pGame->playerNr);
                 //drawStars(pGame->pStars,pGame->pRenderer);
+                flagAnimation(pGame->flag, pGame->pRenderer);
                 for(int i=0;i<MAX_PLAYERS;i++)
                 {
                     renderPlayer(pGame->pPlayer[i], pGame->pRenderer, pGame->pPlayer[pGame->playerNr]);
@@ -227,7 +246,7 @@ void updateWithServerData(Game *pGame){
     pGame->state = sData.gState;
     //We might need a function to get mapdata as well to update the map
     for(int i=0;i<MAX_PLAYERS;i++){
-        updatePlayerWithRecievedData(pGame->pPlayer[i],&(sData.players[i]));
+        updatePlayerWithRecievedData(pGame->pPlayer[i],&(sData.players[i]), &(pGame->flag));
         // printf("player %d, pos: %d, posy: %d\n", i, pGame->pPlayer[i]->playerX, pGame->pPlayer[i]->playerY);
     }
 }
@@ -283,6 +302,7 @@ void close(Game *pGame){
     //if(pGame->pStars) destroyStars(pGame->pStars);
     if(pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if(pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
+    if(pGame->flag)destroyFlag(pGame->flag);
     destroyGridMap(pGame->map);
     for(int i=0;i<MAX_PLAYERS;i++)
     {
@@ -295,6 +315,7 @@ void close(Game *pGame){
             //printf("weapon destroyed2: %d\n", weapon[i]);
         }
     }
+    destroyFlag(pGame->flag);
     
     // if(pGame->pWaitingText) destroyText(pGame->pWaitingText);
     // if(pGame->pOverText) destroyText(pGame->pOverText);

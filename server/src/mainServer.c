@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <windows.h>
+//#include <windows.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
 #include <SDL2/SDL_image.h>
@@ -111,11 +111,18 @@ int initiate(Game *pGame){
     printf("Packet done\n");
 
     //players
-    for(int i=0;i<MAX_PLAYERS;i++)
-    {
-        // This needs a bit of work, look at createRocket function how it handles player spawn
-        pGame->pPlayer[i] = createPlayer(pGame->pRenderer, 80 + (i*10), 80 + (i*10));/*/createRocket(i,pGame->pRenderer,WINDOW_WIDTH,WINDOW_HEIGHT)*/
-        printf("Player %d created, rectx: %d, recty: %d\n", i, pGame->pPlayer[i]->playerRect.x, pGame->pPlayer[i]->playerRect.y);
+    if(MAX_PLAYERS==2){
+        pGame->pPlayer[0] = createPlayer(pGame->pRenderer,160,160);
+        pGame->pPlayer[1] = createPlayer(pGame->pRenderer,LEVEL_WIDTH-160,LEVEL_HEIGHT-160);
+    }else if(MAX_PLAYERS==3){
+        pGame->pPlayer[0] = createPlayer(pGame->pRenderer,160,160);
+        pGame->pPlayer[1] = createPlayer(pGame->pRenderer,LEVEL_WIDTH-160,160);
+        pGame->pPlayer[2] = createPlayer(pGame->pRenderer,LEVEL_WIDTH-160,LEVEL_HEIGHT-160);
+    }else{
+        pGame->pPlayer[0] = createPlayer(pGame->pRenderer,160,160);
+        pGame->pPlayer[1] = createPlayer(pGame->pRenderer,LEVEL_WIDTH-160,160);
+        pGame->pPlayer[2] = createPlayer(pGame->pRenderer,LEVEL_WIDTH-160,LEVEL_HEIGHT-160);
+        pGame->pPlayer[3] = createPlayer(pGame->pRenderer,160,LEVEL_HEIGHT-160);
     }
     pGame->nr_of_players = MAX_PLAYERS;
 
@@ -128,6 +135,8 @@ int initiate(Game *pGame){
     pGame->weapon[2] = createWeapon(pGame->pRenderer, 3, pGame->map); // damage stave
     pGame->weapon[3] = createWeapon(pGame->pRenderer, 4, pGame->map); // damage stave
     pGame->weapon[4] = NULL; // End of array marker (optional, but helps with iteration)
+
+    pGame->flag = createFlag(pGame->pRenderer, 160, 160);
 
     // Ensure all weapons are created successfully
     for (int i = 0; i < 4; ++i) {
@@ -147,6 +156,11 @@ int initiate(Game *pGame){
             close(pGame);
             return 0;
         }
+    }
+
+    if(!pGame->flag){
+        printf("error creating flag\n");
+        close(pGame);
     }
     // if(!pGame->pOverText || !pGame->pStartText){
     //     printf("Error: %s\n",SDL_GetError());
@@ -193,6 +207,7 @@ void run(Game *pGame){
                 SDL_SetRenderDrawColor(pGame->pRenderer,255,0,0,255);
                 SDL_RenderClear(pGame->pRenderer);
                 SDL_SetRenderDrawColor(pGame->pRenderer,230,230,230,255);
+                flagAnimation(pGame->flag, pGame->pRenderer);
                 for(int i=0;i<MAX_PLAYERS;i++)
                 {
                     renderPlayer(pGame->pPlayer[i], pGame->pRenderer, pGame->pPlayer[i]);
@@ -248,7 +263,7 @@ void setUpGame(Game *pGame){
 void sendGameData(Game *pGame){
     pGame->sData.gState = pGame->state;
     for(int i=0;i<MAX_PLAYERS;i++){
-        getPlayerSendData(pGame->pPlayer[i], &(pGame->sData.players[i]));
+        getPlayerSendData(pGame->pPlayer[i], &(pGame->sData.players[i]), &(pGame->flag));
         //printf("plnr: %d, plx: %d, plvx: %d, ply: %d, plvy: %d\n", pGame->pPlayer[i]->playerNumber, pGame->pPlayer[i]->playerX, pGame->pPlayer[i]->playerVelocityX, pGame->pPlayer[i]->playerY, pGame->pPlayer[i]->playerVelocityY);
     }
     for(int i=0;i<MAX_PLAYERS;i++){
@@ -295,6 +310,7 @@ void close(Game *pGame){
     //if(pGame->pStars) destroyStars(pGame->pStars);
     if(pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if(pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
+    if(pGame->flag)destroyFlag(pGame->flag);
 
     //if(pGame->pOverText) destroyText(pGame->pOverText);
     //if(pGame->pStartText) destroyText(pGame->pStartText);   
