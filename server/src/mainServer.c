@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <time.h>
 #include <windows.h>
 #include <SDL2/SDL.h>
@@ -7,19 +8,31 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_timer.h>
+#include "music.h"
 #include "player.h"
 #include "gridmap.h"
 #include "playerData.h"
 #include "collisionDetection.h"
+#include "weapon.h"
+#include "flag.h"
+#include "menu.h"
+#include "text.h"
+
 
 struct game{
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
+    SDL_Texture* gridTexture;
     Player* pPlayer[MAX_PLAYERS];
     int nr_of_players;
     GridMap* map;
-    //TTF_Font *pFont, *pScoreFont;
-    //Text *pOverText, *pStartText;
+    Weapon* weapon[5];
+    Flag* flag;
+    GameUI* pointsUI;
+    GameUI* currentPointsDisplayUI;
+    bool holdingFlagSound;
+    TTF_Font *pFont, *pScoreFont;
+    Text *pOverText, *pStartText, *pWaitingText, *pYouLoseText, *pYouWonText;
     GameState state;
 	UDPsocket pSocket;
 	UDPpacket *pPacket;
@@ -83,13 +96,13 @@ int initiate(Game *pGame){
     }
     printf("Basic init\n");
 
-    //pGame->pFont = TTF_OpenFont("../lib/resources/arial.ttf", 100);
-    //pGame->pScoreFont = TTF_OpenFont("../lib/resources/arial.ttf", 30);
-    // if(!pGame->pFont || !pGame->pScoreFont){
-    //     printf("Error: %s\n",TTF_GetError());
-    //     close(pGame);
-    //     return 0;
-    // }
+    pGame->pFont = TTF_OpenFont("../lib/resources/arial.ttf", 100);
+    pGame->pScoreFont = TTF_OpenFont("../lib/resources/arial.ttf", 30);
+    if(!pGame->pFont || !pGame->pScoreFont){
+         printf("Error: %s\n",TTF_GetError());
+         close(pGame);
+         return 0;
+    }
 
     if (!(pGame->pSocket = SDLNet_UDP_Open(2000)))
 	{
@@ -106,19 +119,16 @@ int initiate(Game *pGame){
 	}
     printf("Packet done\n");
 
-    for(int i=0;i<MAX_PLAYERS;i++)
-    {
-        // This needs a bit of work, look at createRocket function how it handles player spawn
-        pGame->pPlayer[i] = createPlayer(pGame->pRenderer, 80 + (i*10), 80 + (i*10));/*/createRocket(i,pGame->pRenderer,WINDOW_WIDTH,WINDOW_HEIGHT)*/
-        printf("Player %d created, rectx: %d, recty: %d\n", i, pGame->pPlayer[i]->playerRect.x, pGame->pPlayer[i]->playerRect.y);
-    }
+    pGame->pPlayer[0] = createPlayer(pGame->pRenderer,160,160, 0);
+    pGame->pPlayer[1] = createPlayer(pGame->pRenderer,LEVEL_WIDTH-160,160, 1);
+    pGame->pPlayer[2] = createPlayer(pGame->pRenderer,LEVEL_WIDTH-160,LEVEL_HEIGHT-160, 2);
+    pGame->pPlayer[3] = createPlayer(pGame->pRenderer,160,LEVEL_HEIGHT-160, 3);
     pGame->nr_of_players = MAX_PLAYERS;
 
-    pGame->map = loadMapFromFile("../lib/resources/map.txt");
+    pGame->map = createGridMap();
+    loadMapFromFile("../lib/resources/map.txt", pGame->map);
+    pGame->gridTexture = loadGridMap(pGame->pRenderer);
 
-    //pGame->pStars = createStars(WINDOW_WIDTH*WINDOW_HEIGHT/10000,WINDOW_WIDTH,WINDOW_HEIGHT);
-    //pGame->pOverText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Game over",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
-    //pGame->pStartText = createText(pGame->pRenderer,238,168,65,pGame->pScoreFont,"Waiting for clients",WINDOW_WIDTH/2,WINDOW_HEIGHT/2+100);
     for(int i=0;i<MAX_PLAYERS;i++){
         if(!pGame->pPlayer[i]){
             printf("Error: %s\n",SDL_GetError());
@@ -126,17 +136,72 @@ int initiate(Game *pGame){
             return 0;
         }
     }
-    // if(!pGame->pOverText || !pGame->pStartText){
-    //     printf("Error: %s\n",SDL_GetError());
-    //     close(pGame);
-    //     return 0;
-    // }
+
+    pGame->pointsUI = gameUI(pGame->pWindow, pGame->pRenderer);
+    if(!pGame->pointsUI) {
+        printf("Failed to create UI, Error: %s\n", SDL_GetError());
+        SDL_DestroyRenderer(pGame->pRenderer);
+        SDL_DestroyWindow(pGame->pWindow);
+        SDL_Quit();
+        return 1;
+    }
+
+    pGame->currentPointsDisplayUI = pointsDisplayUI(pGame->pWindow, pGame->pRenderer, pGame->pPlayer[0]->playerPoints);
+    if(!pGame->currentPointsDisplayUI) {
+        printf("Failed to create currentPointsDisplayUI, Error: %s\n", SDL_GetError());
+        SDL_DestroyRenderer(pGame->pRenderer);
+        SDL_DestroyWindow(pGame->pWindow);
+        SDL_Quit();
+        return 1;
+    }
+
+
+    pGame->flag = createFlag(pGame->pRenderer);
+    if(!pGame->flag)
+    {
+        printf("Failed to create flag, Error: %s\n", SDL_GetError());
+        SDL_DestroyRenderer(pGame->pRenderer);
+        SDL_DestroyWindow(pGame->pWindow);
+        SDL_Quit();
+        return 1;
+    }
+
+    pGame->flag->flagRect.x = pGame->map->cells[44][44].cellRect.x;
+    pGame->flag->flagRect.y = pGame->map->cells[32][32].cellRect.y;
+    pGame->flag->flagX = pGame->flag->flagRect.x;
+    pGame->flag->flagY = pGame->flag->flagRect.y;
+    pGame->flag->xStart = pGame->flag->flagRect.x;
+    pGame->flag->yStart = pGame->flag->flagRect.y;
+
+
+    pGame->weapon[0] = createWeapon(pGame->pRenderer, 1, pGame->map); // slow stave
+    pGame->weapon[1] = createWeapon(pGame->pRenderer, 2, pGame->map); // freeze stave
+    pGame->weapon[2] = createWeapon(pGame->pRenderer, 3, pGame->map); // damage stave
+    pGame->weapon[3] = createWeapon(pGame->pRenderer, 4, pGame->map); // damage stave
+    pGame->weapon[4] = NULL; // End of array marker (optional, but helps with iteration)
+
+    // Ensure all weapons are created successfully
+    for (int i = 0; i < 4; ++i) {
+        if (!pGame->weapon[i]) {
+            printf("Failed to create weapon %d, Error: %s\n", i+1, SDL_GetError());
+            SDL_DestroyRenderer(pGame->pRenderer);
+            SDL_DestroyWindow(pGame->pWindow);
+            SDL_Quit();
+            return 1;
+        }
+    }
+    pGame->holdingFlagSound = false;
     pGame->state = START;
     pGame->nrOfClients = 0;
-
-    
     return 1;
 }
+
+
+
+
+
+
+
 
 void run(Game *pGame){
     int close_requested = 0;
@@ -155,45 +220,51 @@ void run(Game *pGame){
                 }
                 if(SDL_PollEvent(&event)) if(event.type==SDL_QUIT) close_requested = 1;
                 for(int i=0;i<MAX_PLAYERS;i++)
-                    // updateRocket(pGame->pPlayer[i]);
-                for(int i=0;i<MAX_PLAYERS;i++)
-                    for(int j=0;j<MAX_PLAYERS;j++)
-                        // if(i!=j && collideRocket(pGame->pPlayer[i],pGame->pPlayer[j])){
-                        //     pGame->nr_of_players-=2;
-                        //     if(pGame->nr_of_players<=1) pGame->state = GAME_OVER;
-                        // }
-                for(int i=0;i<MAX_PLAYERS;i++)
-                    for(int j=0;j<MAX_PLAYERS;j++)
-                        // if(i!=j && hitRocket(pGame->pPlayer[i],pGame->pPlayer[j])){
-                        //     (pGame->nr_of_players)--;
-                        //     if(pGame->nr_of_players<=1) pGame->state = GAME_OVER;
-                        // } 
+                    updatePlayer(pGame->pPlayer[i]);
                 SDL_SetRenderDrawColor(pGame->pRenderer,255,0,0,255);
                 SDL_RenderClear(pGame->pRenderer);
                 SDL_SetRenderDrawColor(pGame->pRenderer,230,230,230,255);
-                //drawStars(pGame->pStars,pGame->pRenderer);
                 for(int i=0;i<MAX_PLAYERS;i++)
                 {
+                    playerGotFlagCheck(pGame->pPlayer[i], pGame->flag);
+                    playerDeliveredFlag(pGame->pRenderer, pGame->pPlayer[i], pGame->flag, pGame->map, pGame->currentPointsDisplayUI);
+                    flagAnimation(pGame->pRenderer, pGame->flag, pGame->pPlayer[0]->camera);
                     renderPlayer(pGame->pPlayer[i], pGame->pRenderer, pGame->pPlayer[i]);
                     checkCollisionWall(pGame->pPlayer[i], pGame->map);
-                    // drawRocket(pGame->pPlayer[i]);
+                    checkBulletCollisionWall(pGame->pPlayer[i], pGame->map);
+                    renderWeapon(pGame->pRenderer, pGame->weapon[i], pGame->pPlayer[i]->camera);
+                    drawBullet(pGame->pPlayer[i]->pBullet, pGame->pRenderer, pGame->pPlayer[i]->camera);
+
+                    if(hitPlayer(pGame->pPlayer[0], pGame->pPlayer[i], pGame->weapon, pGame->pPlayer[0]->camera))
+                        printf("player %d shot player %d\n", pGame->pPlayer[0]->id, pGame->pPlayer[i]->id);
+                    if(hitPlayer(pGame->pPlayer[1], pGame->pPlayer[i], pGame->weapon, pGame->pPlayer[0]->camera))
+                        printf("player %d shot player %d\n", pGame->pPlayer[1]->id, pGame->pPlayer[i]->id);
+                    if(hitPlayer(pGame->pPlayer[2], pGame->pPlayer[i], pGame->weapon, pGame->pPlayer[0]->camera))
+                        printf("player %d shot player %d\n", pGame->pPlayer[2]->id, pGame->pPlayer[i]->id);
+                    if(hitPlayer(pGame->pPlayer[3], pGame->pPlayer[i], pGame->weapon, pGame->pPlayer[0]->camera))
+                        printf("player %d shot player %d\n", pGame->pPlayer[3]->id, pGame->pPlayer[i]->id);
+
+                    applyWeaponToPlayer(pGame->pPlayer[i], pGame->weapon[0], pGame->pPlayer[0]->camera);
+                    applyWeaponToPlayer(pGame->pPlayer[i], pGame->weapon[1], pGame->pPlayer[0]->camera);
+                    applyWeaponToPlayer(pGame->pPlayer[i], pGame->weapon[2], pGame->pPlayer[0]->camera);
+                    applyWeaponToPlayer(pGame->pPlayer[i], pGame->weapon[3], pGame->pPlayer[0]->camera);
                 }
+
+                
+                SDL_RenderCopy(pGame->pRenderer, pGame->pointsUI->pointUITexture, NULL, &pGame->pointsUI->pointUIRect);
+                SDL_RenderCopy(pGame->pRenderer, pGame->currentPointsDisplayUI->pointUITexture, NULL, &pGame->currentPointsDisplayUI->pointUIRect);
                 SDL_RenderPresent(pGame->pRenderer);
                 
                 break;
             case GAME_OVER:
-                //drawText(pGame->pOverText);
                 sendGameData(pGame);
                 if(pGame->nrOfClients==MAX_PLAYERS) pGame->nrOfClients = 0;
             case START:
-                //drawText(pGame->pStartText);
                 SDL_RenderPresent(pGame->pRenderer);
                 if(SDL_PollEvent(&event) && event.type==SDL_QUIT) close_requested = 1;
-                //printf("Waiting for packets, nrofclients: %d, nrofplayers: %d\n", pGame->nrOfClients, pGame->nr_of_players);
                 if(SDLNet_UDP_Recv(pGame->pSocket,pGame->pPacket)==1)
                 {
                     add(pGame->pPacket->address,pGame->clients,&(pGame->nrOfClients));
-                    //pGame.
                     if(pGame->nrOfClients==MAX_PLAYERS) 
                     {
                         printf("Max players reached\n");
@@ -215,12 +286,10 @@ void run(Game *pGame){
                 }
                 break;
         }
-        //SDL_Delay(1000/60-15);//might work when you run on different processors
     }
 }
 
 void setUpGame(Game *pGame){
-    // for(int i=0;i<MAX_PLAYERS;i++) resetRocket(pGame->pPlayer[i]);
     pGame->nr_of_players=MAX_PLAYERS;
     pGame->state = ONGOING;
 }
@@ -229,15 +298,13 @@ void sendGameData(Game *pGame){
     pGame->sData.gState = pGame->state;
     for(int i=0;i<MAX_PLAYERS;i++){
         getPlayerSendData(pGame->pPlayer[i], &(pGame->sData.players[i]));
-        //printf("plnr: %d, plx: %d, plvx: %d, ply: %d, plvy: %d\n", pGame->pPlayer[i]->playerNumber, pGame->pPlayer[i]->playerX, pGame->pPlayer[i]->playerVelocityX, pGame->pPlayer[i]->playerY, pGame->pPlayer[i]->playerVelocityY);
     }
+    
     for(int i=0;i<MAX_PLAYERS;i++){
-        //printf("Whatever the fuck this is doing, %d\n", i);
         pGame->sData.playerNr = i;
         memcpy(pGame->pPacket->data, &(pGame->sData), sizeof(ServerData));
 		pGame->pPacket->len = sizeof(ServerData);
         pGame->pPacket->address = pGame->clients[i];
-        //printf("%d, %d, %d, %d\n", pGame->sData.gState, pGame->sData.playerNr, pGame->sData.players->x, pGame->sData.players->y);
 		SDLNet_UDP_Send(pGame->pSocket,-1,pGame->pPacket);
     }
 }
@@ -248,38 +315,33 @@ void add(IPaddress address, IPaddress clients[],int *pNrOfClients){
 	(*pNrOfClients)++;
 }
 
-void executeCommand(Game *pGame,ClientData cData){
-    printf("cdata: plx: %d, ply: %d\n", cData.x, cData.y);
-    //pGame->pPlayer[cData.playerNumber]->playerX = cData.x;
-    //pGame->pPlayer[cData.playerNumber]->playerY = cData.y;
+void executeCommand(Game *pGame, ClientData cData){
     handlePlayerInput(pGame->pPlayer[cData.playerNumber],cData,LEVEL_WIDTH,LEVEL_HEIGHT);
-    // switch (cData.command)
-    // {
-    //     case ACC:
-    //         accelerate(pGame->pPlayer[cData.playerNumber]);
-    //         break;
-    //     case LEFT:
-    //         turnLeft(pGame->pPlayer[cData.playerNumber]);
-    //         break;
-    //     case RIGHT:
-    //         turnRight(pGame->pPlayer[cData.playerNumber]);
-    //         break;
-    //     case FIRE:
-    //         fireRocket(pGame->pPlayer[cData.playerNumber]);
-    //         break;
-    // }
 }
 
 void close(Game *pGame){
+
+    
     for(int i=0;i<MAX_PLAYERS;i++) if(pGame->pPlayer[i]) destroyPlayer(pGame->pPlayer[i]);
-    //if(pGame->pStars) destroyStars(pGame->pStars);
+
+
+    for (int i = 0; i < 5; ++i) {
+        if (pGame->weapon[i] != NULL) {
+            if(pGame->weapon[i])destroyWeapon(pGame->weapon[i]);
+        }
+    }
+
+    if(pGame->flag)destroyFlag(pGame->flag);
+    if(pGame->map)destroyGridMap(pGame->map);
+    if(pGame->pointsUI)(pGame->pointsUI);
+    if(pGame->currentPointsDisplayUI)(pGame->currentPointsDisplayUI);
     if(pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if(pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
 
-    //if(pGame->pOverText) destroyText(pGame->pOverText);
-    //if(pGame->pStartText) destroyText(pGame->pStartText);   
-    // if(pGame->pFont) TTF_CloseFont(pGame->pFont);
-    // if(pGame->pScoreFont) TTF_CloseFont(pGame->pScoreFont);
+    if(pGame->pOverText) destroyText(pGame->pOverText);
+    if(pGame->pStartText) destroyText(pGame->pStartText);   
+    if(pGame->pFont) TTF_CloseFont(pGame->pFont);
+    if(pGame->pScoreFont) TTF_CloseFont(pGame->pScoreFont);
 
     if(pGame->pPacket) SDLNet_FreePacket(pGame->pPacket);
 	if(pGame->pSocket) SDLNet_UDP_Close(pGame->pSocket);

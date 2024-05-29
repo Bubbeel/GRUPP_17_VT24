@@ -6,14 +6,17 @@ INCLUDE = -IC:\msys64\mingw64\include\SDL2 -I$(INCDIR)
 CFLAGS = -g -I$(INCLUDE) -c
 LDFLAGS = -lmingw32 -lSDL2main -lSDL2_image -lSDL2 -lSDL2_ttf -lSDL2_net -lm
 
-CTFGame: main.o player.o flag.o gridMap.o collisionDetection.o serverClient.o menu.o
-	gcc -o CTFGame main.o player.o flag.o gridMap.o collisionDetection.o serverClient.o menu.o $(LDFLAGS)
+CTFGame: main.o player.o weapon.o flag.o gridMap.o collisionDetection.o serverClient.o menu.o
+	gcc -o CTFGame main.o player.o weapon.o flag.o gridMap.o collisionDetection.o serverClient.o menu.o $(LDFLAGS)
 
-main.o: $(SRCDIR)/main.c $(INCDIR)/player.h $(INCDIR)/gridmap.h $(INCDIR)/playerData.h
+main.o: $(SRCDIR)/main.c $(INCDIR)/player.h $(INCDIR)/weapon.h $(INCDIR)/gridmap.h $(INCDIR)/playerData.h
 	$(CC) $(CFLAGS) $(SRCDIR)/main.c
 
 player.o: $(SRCDIR)/player.c
 	$(CC) $(CFLAGS) $(SRCDIR)/player.c
+	
+weapon.o: $(SRCDIR)/weapon.c
+	$(CC) $(CFLAGS) $(SRCDIR)/weapon.c
 
 flag.o: $(SRCDIR)/flag.c
 	$(CC) $(CFLAGS) $(SRCDIR)/flag.c

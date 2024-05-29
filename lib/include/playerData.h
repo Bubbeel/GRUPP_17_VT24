@@ -1,13 +1,15 @@
 #ifndef playerData_h
 #define playerData_h
 
+#include <stdbool.h>
+
 #define WINDOW_WIDTH 1408
 #define WINDOW_HEIGHT 800
 #define LEVEL_WIDTH 2816
 #define LEVEL_HEIGHT 2100
-#define MAX_PLAYERS 2
+#define MAX_PLAYERS 4
+#define NROFWEAPONS 5
 
-#include "player.h"
 
 enum gameState{START, ONGOING, GAME_OVER};
 typedef enum gameState GameState;

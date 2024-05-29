@@ -2,6 +2,10 @@
 #define FLAG_H
 
 #include <SDL2/SDL.h>
+#include "playerData.h"
+
+
+
 
 typedef struct
 {
@@ -10,12 +14,13 @@ typedef struct
     SDL_Rect flagRect;
     int flagFrames;
     int flagX, flagY;
+    int xStart, yStart;
+    Uint32 timeInterval;
 }Flag;
 
 Flag* createFlag(SDL_Renderer* renderer);
-void flagAnimation(SDL_Renderer* renderer, Flag* flag);
+void flagAnimation(SDL_Renderer* renderer, Flag* flag, SDL_Rect camera); // with camera
+void resetFlag(Flag* flag);
 void destroyFlag(Flag* Flag);
-
-void moveFlag(SDL_Rect *flagRect, int player1X, int player1Y, int closeDistanceThreshold, int flagSpeed);
 
 #endif /* FLAG_H */
